@@ -23,7 +23,7 @@ import java.util.List;
 @Service
 public class SatisfaccionClienteService {
 
-    // --- 1. DEPENDENCIAS ---
+
     @Autowired
     private ServicioRepository servicioRepository;
 
