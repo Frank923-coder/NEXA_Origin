@@ -5,10 +5,12 @@ import com.example.MotvirsWeb.Models.Usuario;
 import com.example.MotvirsWeb.Repositorios.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -130,11 +132,32 @@ public class PasswordResetService {
 
         mailSender.send(message);
     }
+    @Transactional
+    public void changePassword(String email, String currentPassword, String newPassword) {
 
 
 
 
 
+        // 1. Buscar al usuario (asumimos que es un Usuario o Conductor, ya que comparten repositorio)
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(email);
+
+        if (usuarioOpt.isEmpty()) {
+            throw new RuntimeException("Usuario no encontrado.");
+        }
+
+        Usuario usuario = usuarioOpt.get();
+
+        // 2. VERIFICACIÓN DE SEGURIDAD CRÍTICA
+        // Comparamos la contraseña plana que ingresó con el Hash de la base de datos
+        if (!passwordEncoder.matches(currentPassword, usuario.getPassword())) {
+            throw new BadCredentialsException("La contraseña actual es incorrecta.");
+        }
+
+        // 3. Si pasa, encriptamos la nueva y guardamos
+        usuario.setPassword(passwordEncoder.encode(newPassword));
+        usuarioRepository.save(usuario);
+    }
 
 
 }

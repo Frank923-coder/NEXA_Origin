@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <title>Inicio de sesión</title>
-    <link href="/css/style_index.css" rel="stylesheet">
-    <link rel="icon" href="/icon/NEXA_ICO.ico">
+    <link th:href="@{/css/style_index.css}" rel="stylesheet">
+    <link rel="icon" th:href="@{/icon/NEXA_ICO.ico}">
     <style>
         /* Estilos para las notificaciones toast */
         .toast-container {
@@ -142,7 +142,7 @@
 
 <button class="back-button" id="backButton" onclick="window.location.href='/public/home/pasajero'">
     <i class="fas fa-arrow-left"></i>
-    <span>volver</span>
+    <span>NEXA</span>
 </button>
 
 
@@ -169,7 +169,7 @@
             <br>
             <input type="email" name="username" placeholder="Correo Electrónico" required>
             <input type="password" name="password" placeholder="Contraseña" required>
-            <a  th:href="@{/auth/forgot-password}">!Olvide mi contraseña</a>
+            <a  th:href="@{/auth/forgot-password}">¿Olvidaste tu contraseña?</a>
             <button type="submit">Inicia Sesión</button>
         </form>
     </div>

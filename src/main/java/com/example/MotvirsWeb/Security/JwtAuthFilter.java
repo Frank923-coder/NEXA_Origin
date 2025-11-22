@@ -38,7 +38,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        jwt = authHeader.substring(7); // Quita "Bearer "
+        jwt = authHeader.substring(7);
         userEmail = jwtService.extractUsername(jwt);
 
         // Si tenemos email y el usuario no está autenticado en el contexto actual...

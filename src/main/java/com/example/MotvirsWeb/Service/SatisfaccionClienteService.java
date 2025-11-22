@@ -23,17 +23,16 @@ import java.util.List;
 @Service
 public class SatisfaccionClienteService {
 
-
     @Autowired
     private ServicioRepository servicioRepository;
 
     @Autowired
-    private ModeloInfoRepository modeloInfoRepository; // Para guardar el árbol como texto
+    private ModeloInfoRepository modeloInfoRepository;
 
-    @Value("${motvirs.model.path}") // De application.properties
+    @Value("${motvirs.model.path}")
     private String modelFilePath;
 
-    // --- 2. ESTADO DEL MODELO EN MEMORIA ---
+    // --- ESTADO DEL MODELO EN MEMORIA ---
     private J48 j48Model;       // El modelo J48 entrenado
     private Instances dataHeader; // La "plantilla" de los datos (atributos)
 
@@ -58,7 +57,6 @@ public class SatisfaccionClienteService {
         File modelFile = new File(modelFilePath);
         if (modelFile.exists()) {
             log.info("Cargando modelo J48 existente desde: {}", modelFilePath);
-            // Lee el modelo (índice 0) y la cabecera (índice 1)
             Object[] loadedObjects = SerializationHelper.readAll(modelFilePath);
             this.j48Model = (J48) loadedObjects[0];
             this.dataHeader = (Instances) loadedObjects[1];
@@ -78,7 +76,7 @@ public class SatisfaccionClienteService {
         attributes.add(new Attribute("duracion"));
 
         // Atributo 2: Distancia del viaje en KM
-        attributes.add(new Attribute("distancia")); // <-- Nombre que Weka usará
+        attributes.add(new Attribute("distancia"));
 
         // Atributo 3: Tarifa del viaje
         attributes.add(new Attribute("tarifa"));
@@ -91,8 +89,8 @@ public class SatisfaccionClienteService {
     }
 
     /**
-     * Proceso principal: Carga datos, los transforma y entrena el J48.
-     * Guarda el modelo binario en disco Y el resultado de texto en MongoDB.
+     * Proceso principal: Carga datos, calcula estadísticas, transforma y entrena el J48.
+     * Guarda el modelo binario en disco Y el resultado de texto + stats en MongoDB.
      */
     public String entrenarModelo() throws Exception {
         log.info("Iniciando re-entrenamiento del modelo J48...");
@@ -100,53 +98,64 @@ public class SatisfaccionClienteService {
         // 1. Definir la estructura de los datos
         ArrayList<Attribute> attributes = definirAtributos();
         Instances data = new Instances("satisfaccion_dataset", attributes, 0);
-        data.setClassIndex(attributes.size() - 1); // La última es la clase
+        data.setClassIndex(attributes.size() - 1);
 
-        // Guardamos la cabecera (estructura vacía) para futuras predicciones
+        // Guardamos la cabecera para futuras predicciones
         this.dataHeader = new Instances(data, 0);
 
         // 2. Cargar TODOS los servicios FINALIZADOS de MongoDB
-        List<Servicio> serviciosCompletados = servicioRepository
-                .findByEstado(EstadoServicio.FINALIZADO);
+        List<Servicio> serviciosCompletados = servicioRepository.findByEstado(EstadoServicio.FINALIZADO);
         log.info("Obtenidos {} servicios finalizados de la BD.", serviciosCompletados.size());
 
-        // 3. Proceso ETL (Extract, Transform, Load) en memoria
+        // --- VARIABLES PARA ESTADÍSTICAS ---
+        int countSi = 0;
+        int countNo = 0;
+        double sumaTarifaSi = 0;
+        double sumaTarifaNo = 0;
+        double sumaDistSi = 0;
+        double sumaDistNo = 0;
+
+        // 3. Proceso ETL y Cálculo de Estadísticas
         for (Servicio s : serviciosCompletados) {
 
-            // --- INICIO FEATURE ENGINEERING ---
-
-            // Feature 1: Duración (en minutos)
+            // Feature 1: Duración
             double duracion = 0;
             if (s.getFechaInicio() != null && s.getFechaFinalizacion() != null) {
                 duracion = ChronoUnit.MINUTES.between(s.getFechaInicio(), s.getFechaFinalizacion());
             }
 
-            // <-- ¡CAMBIO! ---
-            // Feature 2: Distancia (en km)
-            // Leemos directamente el campo que guardaste desde el controlador
+            // Feature 2: Distancia
             double distancia = s.getDistanciaKM();
-            // --- FIN DEL CAMBIO ---
 
             // Feature 3: Tarifa
             double tarifa = s.getTarifa();
 
-            // Variable Objetivo (Target): Satisfaccion
-            Double promedio = s.getCalificacionPromedio(); // <-- Usamos tu método @Transient
+            // Variable Objetivo (Target)
+            Double promedio = s.getCalificacionPromedio();
             String satisfaccion;
 
             if (promedio == null) {
-                // Si no hay calificación, no podemos usar este registro para entrenar.
-                continue; // Saltamos al siguiente servicio
+                continue; // Ignorar registros sin calificación
             } else {
-                // Tu regla de negocio: >= 4.0 es "si"
-                satisfaccion = (promedio >= 4.0) ? "si" : "no";
+                // Regla de negocio: >= 4.0 es "si"
+                boolean isSatisfied = promedio >= 4.0;
+                satisfaccion = isSatisfied ? "si" : "no";
+
+                // --- ACUMULAR ESTADÍSTICAS ---
+                if (isSatisfied) {
+                    countSi++;
+                    sumaTarifaSi += tarifa;
+                    sumaDistSi += distancia;
+                } else {
+                    countNo++;
+                    sumaTarifaNo += tarifa;
+                    sumaDistNo += distancia;
+                }
             }
 
-            // --- FIN FEATURE ENGINEERING ---
-
-            // Crear la fila (Instance) para Weka
+            // Crear Instance Weka
             Instance inst = new DenseInstance(attributes.size());
-            inst.setDataset(this.dataHeader); // Enlazar con la cabecera
+            inst.setDataset(this.dataHeader);
             inst.setValue(attributes.get(0), duracion);
             inst.setValue(this.dataHeader.attribute("distancia"), distancia);
             inst.setValue(attributes.get(2), tarifa);
@@ -164,33 +173,44 @@ public class SatisfaccionClienteService {
 
         // 4. Entrenar el clasificador J48
         this.j48Model = new J48();
-        this.j48Model.buildClassifier(data); // ¡Entrenando!
+        this.j48Model.buildClassifier(data);
         log.info("Modelo J48 entrenado exitosamente.");
 
-        // 5. Guardar el modelo BINARIO en el disco (para la app)
+        // 5. Guardar el modelo BINARIO en el disco
         log.info("Guardando modelo binario en: {}", modelFilePath);
         Object[] toSave = new Object[2];
         toSave[0] = this.j48Model;
-        toSave[1] = this.dataHeader; // Guardamos la cabecera también
+        toSave[1] = this.dataHeader;
         SerializationHelper.writeAll(modelFilePath, toSave);
-        log.info("Modelo binario guardado.");
 
-        // 6. Guardar el resultado de TEXTO en MongoDB (para la web)
+        // 6. Guardar el resultado de TEXTO y ESTADÍSTICAS en MongoDB
         String arbolString = this.j48Model.toString();
-        ModeloInfo info = new ModeloInfo(
-                "J48_Satisfaccion",
-                LocalDateTime.now(),
-                arbolString,
-                data.numInstances()
-        );
-        modeloInfoRepository.save(info);
-        log.info("Resultado del entrenamiento (árbol) guardado en MongoDB.");
 
-        return arbolString; // Devolvemos el árbol como string
+        ModeloInfo info = new ModeloInfo();
+        info.setNombreModelo("J48_Satisfaccion");
+        info.setFechaEntrenamiento(LocalDateTime.now());
+        info.setArbolDecisionTexto(arbolString);
+        info.setInstanciasUsadas(data.numInstances());
+
+        // Asignar Totales
+        info.setTotalSatisfactorios(countSi);
+        info.setTotalInsatisfactorios(countNo);
+
+        // Asignar Promedios (Evitando división por cero)
+        info.setPromedioTarifaSi(countSi > 0 ? sumaTarifaSi / countSi : 0);
+        info.setPromedioDistanciaSi(countSi > 0 ? sumaDistSi / countSi : 0);
+
+        info.setPromedioTarifaNo(countNo > 0 ? sumaTarifaNo / countNo : 0);
+        info.setPromedioDistanciaNo(countNo > 0 ? sumaDistNo / countNo : 0);
+
+        modeloInfoRepository.save(info);
+        log.info("Resultado del entrenamiento y estadísticas guardados en MongoDB.");
+
+        return arbolString;
     }
 
     /**
-     * Predice la satisfacción de un nuevo servicio (ya completado).
+     * Predice la satisfacción de un nuevo servicio.
      */
     public String predecirSatisfaccion(Servicio nuevoServicio) throws Exception {
         if (this.j48Model == null) {
@@ -204,27 +224,23 @@ public class SatisfaccionClienteService {
 
         // 1. Crear una instancia Weka vacía CON LA CABECERA
         Instance inst = new DenseInstance(this.dataHeader.numAttributes());
-        inst.setDataset(this.dataHeader); // CRÍTICO: enlazar con la estructura
+        inst.setDataset(this.dataHeader);
 
         // 2. Calcular los mismos features que en el entrenamiento
         double duracion = ChronoUnit.MINUTES.between(nuevoServicio.getFechaInicio(), nuevoServicio.getFechaFinalizacion());
-
-        // <-- ¡CAMBIO! ---
-        double distancia = nuevoServicio.getDistanciaKM(); // <-- Leemos el campo
-        // --- FIN DEL CAMBIO ---
-
+        double distancia = nuevoServicio.getDistanciaKM();
         double tarifa = nuevoServicio.getTarifa();
 
         // 3. Poblar la instancia
         inst.setValue(this.dataHeader.attribute("duracion"), duracion);
         inst.setValue(this.dataHeader.attribute("distancia"), distancia);
         inst.setValue(this.dataHeader.attribute("tarifa"), tarifa);
-        inst.setClassMissing(); // La dejamos vacía porque es lo que queremos predecir
+        inst.setClassMissing();
 
         // 4. Clasificar la instancia
         double predictionIndex = this.j48Model.classifyInstance(inst);
 
-        // 5. Devolver el resultado como String ("si" o "no")
+        // 5. Devolver el resultado
         return this.dataHeader.classAttribute().value((int) predictionIndex);
     }
 }

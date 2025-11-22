@@ -6,10 +6,8 @@
     <title>NEXA - Transporte rápido y seguro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link  href="/css/Homec.css" rel="stylesheet">
-    <link rel="icon" href="/icon/NEXA_ICO.ico">
-
-
+    <link href="/css/Homec.css" rel="stylesheet">
+    <link rel="icon" th:href="@{/icon/NEXA_ICO.ico}">
 </head>
 <body>
 <!-- Navbar -->
@@ -21,14 +19,13 @@
             <i class="fas fa-bars"></i>
         </label>
         <ul class="all-links">
-            <li><a href="#home" class="active">Inicio</a></li>
-            <!--        <li><a href="#services">Servicios</a></li>-->
-            <li><a href="#portfolio">Beneficios</a></li>
-            <li><a href="#contact">Contacto</a></li>
-            <li><a href="#team">Nosotros</a></li>
+            <li><a href="#home" data-section="home">Inicio</a></li>
+            <li><a href="#portfolio" data-section="portfolio">Beneficios</a></li>
+            <li><a href="#contact" data-section="contact">Contacto</a></li>
+            <li><a href="#team" data-section="team">Nosotros</a></li>
             <li><a href="/public/home/pasajero">Pasajero</a></li>
             <li><a href="/auth/registro" class="btn_Reg">Regístrate</a></li>
-            <a th:href="@{/auth/login}" class="btn_Reg" style="float:right">Iniciar </a>
+            <a th:href="@{/auth/login}" class="btn_Reg" style="float:right">Iniciar</a>
         </ul>
     </nav>
 </header>
@@ -50,17 +47,17 @@
     <p>Descubre las ventajas de ser parte de nuestra comunidad</p>
     <ul class="cards">
         <li class="card">
-            <img th:src="@{/img/bono.jpg}" alt="Bono">
+            <img th:src="@{/img/cupon.png}" alt="Bono">
             <h3>Bono</h3>
             <p>Por cada 10 carreras obtendrás una bonificación especial</p>
         </li>
         <li class="card">
-            <img th:src="@{/img/motoSlim.jpg}" alt="Conductor fiel">
+            <img th:src="@{/img/fiel.png}" alt="Conductor fiel">
             <h3>Conductor fiel</h3>
             <p>Disfruta de premios como cambio de aceite, descuentos en papeles, entre otros beneficios exclusivos</p>
         </li>
         <li class="card">
-            <img th:src="@{/img/tecnomecanica.jpg}" alt="Tecnomecánica">
+            <img th:src="@{/img/tecnomecanica.png}" alt="Tecnomecánica">
             <h3>Revisión tecnomecánica</h3>
             <p>Siendo un conductor ejemplar, recibes revisión tecnomecánica gratuita cada 6 meses</p>
         </li>
@@ -75,7 +72,7 @@
         <div class="company-info">
             <h3>Nuestra historia</h3>
             <p>
-                La historia de MotVirs comienza con una idea simple pero poderosa: brindar un servicio de transporte rápido, seguro y accesible para todos. Fundada en 2023 en Cartagena, hemos crecido gracias a la confianza de nuestros usuarios y la dedicación de nuestro equipo.
+                La historia de NEXA comienza con una idea simple pero poderosa: brindar un servicio de transporte rápido, seguro y accesible para todos. Fundada en 2023 en Cartagena, hemos crecido gracias a la confianza de nuestros usuarios y la dedicación de nuestro equipo.
             </p>
         </div>
         <div class="mission-vision">
@@ -126,7 +123,7 @@
     <div class="row">
         <div class="col information">
             <div class="contact-details">
-                <p><i class="fas fa-envelope"></i> nexa@hotmail.com</p>
+                <p><i class="fas fa-envelope"></i> nexabikeservice@gmail.com</p>
                 <p><i class="fas fa-phone"></i> (+57) 986-4763477</p>
                 <p><i class="fas fa-clock"></i> Lunes - Viernes: 8:00 AM - 6:00 PM</p>
                 <p><i class="fas fa-clock"></i> Sábado - Domingo: 10:00 AM - 3:00 PM</p>
@@ -134,10 +131,18 @@
             </div>
         </div>
         <div class="col form">
-            <form>
-                <input type="text" placeholder="Nombre*" required>
-                <input type="email" placeholder="Email*" required>
-                <textarea placeholder="Mensaje*" required></textarea>
+            <form th:action="@{/public/contact}" method="post">
+
+                <div th:if="${mensajeExito}" class="alert-success"
+                     style="background-color: #d4edda; color: #155724; padding: 10px; margin-bottom: 10px; border-radius: 5px; text-align: center;">
+                    <span th:text="${mensajeExito}"></span>
+                </div>
+
+                <input type="text" name="nombre" placeholder="Nombre*" required>
+                <input type="email" name="email" placeholder="Email*" required>
+
+                <textarea name="mensaje" placeholder="Mensaje*" required></textarea>
+
                 <button id="submit" type="submit" class="btn">Enviar Mensaje</button>
             </form>
         </div>
@@ -149,11 +154,103 @@
     <div>
         <span>NEXA© 2025 - Todos los derechos reservados</span>
         <span class="links">
-        <a href="#home">Inicio</a>
-        <a href="#contact">Contacto</a>
-      </span>
+            <a href="#home">Inicio</a>
+            <a href="#contact">Contacto</a>
+        </span>
     </div>
 </footer>
+
 <script src="/js/Homec.js"></script>
+<script>
+    // Sistema de navegación activa
+    document.addEventListener('DOMContentLoaded', function() {
+        // Seleccionar SOLO los enlaces con data-section
+        const navLinks = document.querySelectorAll('a[data-section]');
+        const sections = document.querySelectorAll('section[id]');
+        const menuToggler = document.getElementById('menu-toggler');
+
+        // Función para actualizar el enlace activo
+        function updateActiveLink() {
+            const scrollY = window.pageYOffset + 150;
+            let currentSection = 'home';
+
+            // Encontrar la sección actual
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.offsetHeight;
+                const sectionId = section.getAttribute('id');
+
+                if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
+                    currentSection = sectionId;
+                }
+            });
+
+            // Actualizar clases active
+            navLinks.forEach(link => {
+                const linkSection = link.getAttribute('data-section');
+
+                if (linkSection === currentSection) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
+        }
+
+        // Scroll suave al hacer clic
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetSection = document.querySelector(targetId);
+
+                if (targetSection) {
+                    const offsetPosition = targetSection.offsetTop - 70;
+
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                    });
+
+                    // Cerrar menú móvil
+                    if (menuToggler && menuToggler.checked) {
+                        menuToggler.checked = false;
+                    }
+                }
+            });
+        });
+
+        // Detectar scroll con throttle
+        let ticking = false;
+        window.addEventListener('scroll', function() {
+            if (!ticking) {
+                window.requestAnimationFrame(function() {
+                    updateActiveLink();
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        });
+
+        // Inicializar al cargar
+        updateActiveLink();
+
+        // Animación de aparición de secciones
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, {
+            threshold: 0.1
+        });
+
+        sections.forEach(section => {
+            observer.observe(section);
+        });
+    });
+</script>
+
 </body>
 </html>
