@@ -26,90 +26,70 @@ public class PasswordResetService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    // CAMBIO 1: Quitamos JavaMailSender y @Value
+    // Inyectamos EmailService que es el experto en envíos y URLs
     @Autowired
-    private JavaMailSender mailSender;
-
-
-
-    @Value("${app.base-url}")
-    private String baseUrl;
-
-    @Value("${spring.mail.username}")
-    private String fromEmail;
+    private EmailService emailService;
 
     private static final long EXPIRE_TOKEN_AFTER_MINUTES = 30;
 
     public void initiatePasswordReset(String email) {
-        //Buscar primero en los usuarios
+        // Buscar primero en los usuarios
         Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(email);
 
         if (usuarioOpt.isPresent()) {
-            Usuario usuario = usuarioOpt.get();
-            String token = generateToken();
-            usuario.setResetPasswordToken(token);
-            usuario.setResetPasswordTokenExpiry(LocalDateTime.now().plusMinutes(EXPIRE_TOKEN_AFTER_MINUTES));
-            usuarioRepository.save(usuario);
-            sendResetEmail(usuario.getEmail(), token, "usuario");
+            procesarReset(usuarioOpt.get(), "usuario");
             return;
         }
 
         // Si no es usuario, buscar en conductor
-        Optional<Usuario> conductorOpt = usuarioRepository.findByEmail(email);
+        Optional<Usuario> conductorOpt = usuarioRepository.findByEmail(email); // Asumo que findByEmail busca en ambos o tienes lógica polimórfica
 
+        // NOTA: En tu código original usabas usuarioRepository para ambos.
+        // Si conductor está en la misma colección, esto funciona.
         if (conductorOpt.isPresent()) {
-            Usuario conductor = conductorOpt.get();
-            String token = generateToken();
-            conductor.setResetPasswordToken(token);
-            conductor.setResetPasswordTokenExpiry(LocalDateTime.now().plusMinutes(EXPIRE_TOKEN_AFTER_MINUTES));
-            usuarioRepository.save(conductor);
-            sendResetEmail(conductor.getEmail(), token, "conductor");
+            // Si ya lo encontraste arriba, no entrará aquí, pero mantengo tu lógica
+            // Si son entidades distintas, asegúrate de que 'conductorOpt' sea correcto.
+            procesarReset(conductorOpt.get(), "conductor");
             return;
         }
 
         throw new RuntimeException("No se encontró ninguna cuenta con ese correo electrónico");
+    }
 
+    // Método auxiliar para no repetir código (DRY)
+    private void procesarReset(Usuario usuario, String tipo) {
+        String token = generateToken();
+        usuario.setResetPasswordToken(token);
+        usuario.setResetPasswordTokenExpiry(LocalDateTime.now().plusMinutes(EXPIRE_TOKEN_AFTER_MINUTES));
+        usuarioRepository.save(usuario);
 
-
-
-
-
-
+        // CAMBIO 2: Usamos EmailService.
+        // Él se encarga de buscar la BaseURL correcta (HTTPS) y enviar el correo.
+        emailService.enviarCorreoRecuperacion(usuario.getEmail(), token);
     }
 
     public void resetPassword(String token, String newPassword) {
-        // Buscar en usuarios
+        // Buscar usuario por token
         Optional<Usuario> usuarioOpt = usuarioRepository.findByResetPasswordToken(token);
 
         if (usuarioOpt.isPresent()) {
-            Usuario usuario = usuarioOpt.get();
-            if (isTokenExpired(usuario.getResetPasswordTokenExpiry())) {
-                throw new RuntimeException("El token ha expirado");
-            }
-            // Encriptar la nueva contraseña
-            usuario.setPassword(passwordEncoder.encode(newPassword));
-            usuario.setResetPasswordToken(null);
-            usuario.setResetPasswordTokenExpiry(null);
-            usuarioRepository.save(usuario);
+            actualizarPassword(usuarioOpt.get(), newPassword);
             return;
         }
 
-        // Buscar en Conductor
-        Optional<Usuario> conductorOpt = usuarioRepository.findByResetPasswordToken(token);
+        throw new RuntimeException("Token inválido o no encontrado");
+    }
 
-        if (conductorOpt.isPresent()) {
-            Usuario conductor = conductorOpt.get();
-            if (isTokenExpired(conductor.getResetPasswordTokenExpiry())) {
-                throw new RuntimeException("El token ha expirado");
-            }
-            // Encriptar la nueva contraseña
-            conductor.setPassword(passwordEncoder.encode(newPassword));
-            conductor.setResetPasswordToken(null);
-            conductor.setResetPasswordTokenExpiry(null);
-            usuarioRepository.save(conductor);
-            return;
+    private void actualizarPassword(Usuario usuario, String newPassword) {
+        if (isTokenExpired(usuario.getResetPasswordTokenExpiry())) {
+            throw new RuntimeException("El token ha expirado");
         }
 
-        throw new RuntimeException("Token inválido");
+        usuario.setPassword(passwordEncoder.encode(newPassword));
+        usuario.setResetPasswordToken(null);
+        usuario.setResetPasswordTokenExpiry(null);
+        usuarioRepository.save(usuario);
     }
 
     private String generateToken() {
@@ -120,26 +100,11 @@ public class PasswordResetService {
         return tokenExpiry == null || LocalDateTime.now().isAfter(tokenExpiry);
     }
 
-    private void sendResetEmail(String email, String token, String tipoUsuario) {
-        String resetLink = baseUrl + "/auth/reset-password?token=" + token;
+    // CAMBIO 3: Eliminamos el método 'sendResetEmail' privado antiguo.
+    // CAMBIO 4: Eliminamos las variables @Value de baseUrl y fromEmail de esta clase.
 
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromEmail);
-        message.setTo(email);
-        message.setSubject("Restablecimiento de contraseña");
-        message.setText("Para restablecer tu contraseña, haz clic en el siguiente enlace: " + resetLink +
-                "\n\nEste enlace expirará en 30 minutos.");
-
-        mailSender.send(message);
-    }
     @Transactional
     public void changePassword(String email, String currentPassword, String newPassword) {
-
-
-
-
-
-        // 1. Buscar al usuario (asumimos que es un Usuario o Conductor, ya que comparten repositorio)
         Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(email);
 
         if (usuarioOpt.isEmpty()) {
@@ -148,17 +113,11 @@ public class PasswordResetService {
 
         Usuario usuario = usuarioOpt.get();
 
-        // 2. VERIFICACIÓN DE SEGURIDAD CRÍTICA
-        // Comparamos la contraseña plana que ingresó con el Hash de la base de datos
         if (!passwordEncoder.matches(currentPassword, usuario.getPassword())) {
             throw new BadCredentialsException("La contraseña actual es incorrecta.");
         }
 
-        // 3. Si pasa, encriptamos la nueva y guardamos
         usuario.setPassword(passwordEncoder.encode(newPassword));
         usuarioRepository.save(usuario);
     }
-
-
 }
-
