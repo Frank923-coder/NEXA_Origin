@@ -1,5 +1,6 @@
 package com.example.MotvirsWeb.Controladores;
 
+import com.example.MotvirsWeb.Service.EmailService;
 import com.example.MotvirsWeb.Service.PasswordResetService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -8,12 +9,17 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.UUID;
+
 @Controller
 @RequestMapping("/auth")
 public class PasswordResetController {
 
     @Autowired
     private PasswordResetService passwordResetService;
+
+    @Autowired
+    private EmailService emailService;
 
     @GetMapping("/forgot-password")
     public String showForgotPasswordForm(Model model) {
@@ -61,5 +67,17 @@ public class PasswordResetController {
             redirectAttributes.addFlashAttribute("error", "Error al restablecer: " + e.getMessage());
             return "redirect:/auth/reset-password?token=" + token;
         }
+    }
+
+    public void initiatePasswordReset(String email) {
+        // 1. Verificar si el usuario existe...
+
+        // 2. Generar y guardar el token...
+        String token = UUID.randomUUID().toString();
+        // guardarTokenEnBD(usuario, token);
+
+        // 3. DELEGAR EL ENVÍO AL EMAIL SERVICE
+        // Aquí es donde ocurre la magia. Pasamos el email del usuario y el token.
+        emailService.enviarCorreoRecuperacion(email, token);
     }
 }

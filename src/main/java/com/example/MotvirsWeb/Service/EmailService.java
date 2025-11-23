@@ -62,5 +62,43 @@ public class EmailService {
         // 3. Por defecto para desarrollo local
         return "http://localhost:8080/";
     }
+    public void enviarCorreoRecuperacion(String emailDestino, String token) {
+        try {
+            // 1. Aquí usamos tu método getBaseUrl() para asegurar que sea HTTPS en Azure
+            String baseUrl = getBaseUrl();
+
+            // 2. Construimos el link completo
+            String urlReset = baseUrl + "/auth/reset-password?token=" + token;
+
+            SimpleMailMessage message = new SimpleMailMessage();
+
+            // From: Tu sistema
+            message.setFrom(myEmail);
+
+            // To: El usuario que perdió la contraseña (NO tú)
+            message.setTo(emailDestino);
+
+            message.setSubject("NEXA - Restablecer Contraseña");
+
+            message.setText("Hola,\n\n" +
+                    "Para restablecer tu contraseña en NEXA, haz clic en el siguiente enlace:\n\n" +
+                    urlReset + "\n\n" +  // <--- ¡AQUÍ ESTÁ LA SOLUCIÓN!
+                    "Este enlace expira en 30 minutos.\n" +
+                    "Si no solicitaste esto, ignora este mensaje.");
+
+            mailSender.send(message);
+            System.out.println("Correo de recuperación enviado a: " + emailDestino);
+
+        } catch (Exception e) {
+            System.err.println("Error enviando recuperación: " + e.getMessage());
+            // Opcional: lanzar excepción para que el Controller se entere
+        }
+    }
+
+
+    // Lógica para cambiar la contraseña final
+    public void resetPassword(String token, String newPassword) {
+        // Lógica para buscar el usuario por token y actualizar password
+    }
 
 }
