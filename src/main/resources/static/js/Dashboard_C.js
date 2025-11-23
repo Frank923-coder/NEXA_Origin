@@ -30,7 +30,7 @@ const darkMapStyles = [
   { featureType: "transit", elementType: "geometry", stylers: [{ color: "#444444" }], },
   { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#888888" }], },
 ];
-
+const passengerIconUrl = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2248%22%20height%3D%2248%22%20viewBox%3D%220%200%2048%2048%22%3E%3Ccircle%20cx%3D%2224%22%20cy%3D%2224%22%20r%3D%2224%22%20fill%3D%22%234CAF50%22%2F%3E%3Ccircle%20cx%3D%2224%22%20cy%3D%2224%22%20r%3D%2222%22%20fill%3D%22none%22%20stroke%3D%22%23FFFFFF%22%20stroke-width%3D%221.5%22%2F%3E%3Cpath%20fill%3D%22white%22%20d%3D%22M24%2026c-4.42%200-16%202.21-16%206.6V36h32v-3.4c0-4.39-11.58-6.6-16-6.6zM24%2010c-3.31%200-6%202.69-6%206s2.69%206%206%206%206-2.69%206-6-2.69-6-6-6z%22%2F%3E%3C%2Fsvg%3E';
 // Variables globales
 let map, trafficLayer;
 let markers = [];
@@ -157,8 +157,13 @@ function cargarServiciosDisponibles() {
   fetch('/conductor/servicios-disponibles')
       .then(response => response.json())
       .then(servicios => {
-          markers.forEach(marker => marker.setMap(null));
-          markers = [];
+                markers.forEach(marker => {
+                    if (marker.animationInterval) {
+                    clearInterval(marker.animationInterval); // Detener el intervalo
+                    }
+                    marker.setMap(null);
+                });
+                markers = [];
 
           servicios.forEach(servicio => {
               const marker = new google.maps.Marker({
@@ -169,13 +174,12 @@ function cargarServiciosDisponibles() {
                   map,
                   title: servicio.pasajero.nombre,
                   icon: {
-                      path: google.maps.SymbolPath.CIRCLE,
-                      fillColor: servicio.estado === 'SOLICITADO' ? "#4CAF50" : "#FFC107",
-                      fillOpacity: 1,
-                      strokeColor: "#fff",
-                      strokeWeight: 2,
-                      scale: 8,
-                  },
+                  url: passengerIconUrl, // Usamos nuestro SVG Data URI
+                                          // Definimos el tamaño base (la animación lo hará crecer)
+                  scaledSize: new google.maps.Size(32, 32),
+                                          // Ancla en el centro para que el pulso sea desde el centro
+                  anchor: new google.maps.Point(16, 16)
+                  }
               });
 
               const infoWindowContent = `
@@ -196,6 +200,13 @@ function cargarServiciosDisponibles() {
               marker.addListener('click', () => {
                   infoWindow.open(map, marker);
               });
+
+              if (servicio.estado === 'SOLICITADO') {
+
+                if (typeof animarMarcadorSolicitud === 'function') {
+                    animarMarcadorSolicitud(marker);
+                }
+              }
 
               markers.push(marker);
           });
@@ -398,6 +409,22 @@ function connectWebSocket() {
 function startWebSocket(userId) {
     stompClient.connect({}, function(frame) {
         console.log('Conductor conectado al WebSocket: ' + frame);
+
+        stompClient.subscribe('/topic/servicios-disponibles', function(message) {
+                    // 1. Actualizar el mapa (Lo que ya hacías)
+                    cargarServiciosDisponibles();
+
+                    // 2. Lógica de Notificación
+                    const servicio = JSON.parse(message.body);
+                    const areNotifsEnabled = document.getElementById('chkNotificaciones').checked;
+
+                    // Solo notificamos si:
+                    // a. Las notificaciones están activadas
+                    // b. El estado es SOLICITADO (es nuevo)
+                    if (areNotifsEnabled && servicio.estado === 'SOLICITADO') {
+                        showNewRequestToast(servicio.pasajero.nombre);
+                    }
+        });
 
         stompClient.subscribe(`/topic/conductor/${userId}`, function(message) {
             const servicio = JSON.parse(message.body);
@@ -814,6 +841,7 @@ document.addEventListener('DOMContentLoaded', function() {
   checkDarkMode();
   loadProfileData();
   connectWebSocket();
+  initNotificationSettings();
 
   // Intentar inicializar el mapa si la sección de solicitudes está activa
   const activeSection = document.querySelector('.section.active').id;
@@ -914,6 +942,164 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
+/* =================================== */
+/* ===== LÓGICA MODAL CONFIRMACIÓN ===== */
+/* =================================== */
+
+const confirmModal = document.getElementById('confirm-modal');
+const confirmBtnYes = document.getElementById('confirm-modal-btn-yes');
+const confirmTitle = document.getElementById('confirm-modal-title');
+const confirmMessage = document.getElementById('confirm-modal-message');
+
+/**
+ * Abre el modal de confirmación genérico.
+ * @param {string} title - El título para el modal.
+ * @param {string} message - El mensaje de pregunta.
+ * @param {string} actionId - Un ID para saber qué acción ejecutar (ej: 'logout', 'deleteUser')
+ */
+function openConfirmModal(title, message, actionId) {
+    if (!confirmModal || !confirmBtnYes || !confirmTitle || !confirmMessage) {
+        console.error("Elementos del modal de confirmación no encontrados");
+        return;
+    }
+
+    // 1. Poblar el modal con el texto
+    confirmTitle.textContent = title;
+    confirmMessage.textContent = message;
+
+    // 2. Guardar la acción a ejecutar en el botón de confirmación
+    // Usamos data-attributes, una práctica estándar y limpia.
+    confirmBtnYes.dataset.actionId = actionId;
+
+    // 3. Mostrar el modal
+    confirmModal.style.display = 'flex';
+    document.body.style.overflow = "hidden"; // Evita scroll de fondo
+}
+
+/**
+ * Cierra el modal de confirmación.
+ */
+function closeConfirmModal() {
+    if (!confirmModal) return;
+    confirmModal.style.display = 'none';
+    document.body.style.overflow = "auto"; // Restaura scroll
+}
+
+/**
+ * Ejecuta la acción guardada en el botón 'Confirmar'.
+ */
+function executeConfirmAction() {
+    const actionId = confirmBtnYes.dataset.actionId;
+
+    // Aquí es donde la "reutilización" brilla.
+    // Puedes añadir más 'case' para otras acciones.
+    switch (actionId) {
+        case 'logout':
+            // Busca el formulario de logout y lo envía.
+            const logoutForm = document.getElementById('logout-form');
+            if (logoutForm) {
+                logoutForm.submit();
+            } else {
+                console.error("El formulario 'logout-form' no se encontró.");
+            }
+            break;
+
+        case 'delete-user':
+            // EJEMPLO FUTURO:
+            // console.log("Lógica para borrar usuario...");
+            break;
+
+        case 'approve-all':
+            // EJEMPLO FUTURO:
+            // console.log("Lógica para aprobar todo...");
+            break;
+
+        default:
+            console.warn("Acción de confirmación desconocida:", actionId);
+    }
+
+    // Cierra el modal después de ejecutar la acción
+    closeConfirmModal();
+}
+
+// --- Event Listeners Globales ---
+// 1. Asignar el clic al botón de confirmación
+if (confirmBtnYes) {
+    confirmBtnYes.addEventListener('click', executeConfirmAction);
+}
+
+// 2. (Opcional) Cerrar modal si se hace clic fuera del contenido
+if (confirmModal) {
+    confirmModal.addEventListener('click', (e) => {
+        // Si el clic fue en el overlay (fondo) y no en el contenido
+        if (e.target === confirmModal) {
+            closeConfirmModal();
+        }
+    });
+}
+// Función para inicializar el estado de las notificaciones
+function initNotificationSettings() {
+    const chkNotif = document.getElementById('chkNotificaciones');
+
+    // 1. Cargar estado guardado (o true por defecto)
+    const savedState = localStorage.getItem('receiveNotifications');
+    chkNotif.checked = savedState === null ? true : (savedState === 'true');
+
+    // 2. Guardar cambios cuando el usuario hace click
+    chkNotif.addEventListener('change', function() {
+        localStorage.setItem('receiveNotifications', this.checked);
+        if(this.checked) {
+            // Notificación de prueba visual para confirmar activación
+            showNewRequestToast("Sistema", "Notificaciones activadas correctamente");
+        }
+    });
+}
+function showNewRequestToast(pasajeroNombre, mensajeExtra = "está buscando conductor") {
+    // 1. Verificar si ya existe un toast y removerlo para evitar acumulación
+    const existingToast = document.querySelector('.toast-notification');
+    if (existingToast) existingToast.remove();
+
+    // 2. Crear HTML dinámico
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.innerHTML = `
+        <div class="toast-icon">
+            <i class="fas fa-street-view"></i>
+        </div>
+        <div class="toast-content">
+            <h4>Nueva Solicitud</h4>
+            <p><strong>${pasajeroNombre}</strong> ${mensajeExtra}</p>
+        </div>
+    `;
+
+    // 3. Añadir al DOM
+    document.body.appendChild(toast);
+
+    // 4. Reproducir sonido (Opcional pero recomendado para conductores)
+    playNotificationSound();
+
+    // 5. Animar entrada (pequeño delay para que CSS detecte el cambio)
+    setTimeout(() => toast.classList.add('show'), 10);
+
+    // 6. Eliminar automáticamente después de 5 segundos
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400); // Esperar a que termine la animación de salida
+    }, 5000);
+}
+
+// Sonido simple "ding"
+function playNotificationSound() {
+    // Puedes usar un archivo mp3 real o este beep generado por JS si quieres ser minimalista,
+    // pero un archivo de audio es mejor. Aquí simulo la intención.
+    // const audio = new Audio('/sounds/notification.mp3');
+    // audio.play().catch(e => console.log("Interacción requerida para audio"));
+}
+
+
+// Asignar funciones al objeto 'window' para que los 'onclick' del HTML funcionen
+window.openConfirmModal = openConfirmModal;
+window.closeConfirmModal = closeConfirmModal;
 // Asegurar que las funciones estén en el ámbito global
 window.initMap = initMap;
 window.showSection = showSection;

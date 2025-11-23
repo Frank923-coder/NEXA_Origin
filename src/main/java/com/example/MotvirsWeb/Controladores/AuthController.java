@@ -4,8 +4,9 @@ import com.example.MotvirsWeb.Models.*;
 import com.example.MotvirsWeb.Repositorios.UsuarioRepository;
 import com.example.MotvirsWeb.Repositorios.VehiculoRepository;
 import com.example.MotvirsWeb.Service.AuthService;
+import com.example.MotvirsWeb.socket.WebSocketService;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
+
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,21 +25,26 @@ import java.util.Map;
 
 @Controller
 @RequestMapping("/auth")
-
 public class AuthController {
 
     private final AuthService authService;
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final VehiculoRepository vehiculoRepository;
+    private final WebSocketService webSocketService; // <--- 2. DECLARACIÓN DEL SERVICIO
 
-
-
-    public AuthController(AuthService authService, UsuarioRepository usuarioRepository, VehiculoRepository vehiculoRepository,PasswordEncoder passwordEncoder) {
+    // 3. ACTUALIZACIÓN DEL CONSTRUCTOR (Inyectamos webSocketService)
+    @Autowired
+    public AuthController(AuthService authService,
+                          UsuarioRepository usuarioRepository,
+                          VehiculoRepository vehiculoRepository,
+                          PasswordEncoder passwordEncoder,
+                          WebSocketService webSocketService) {
         this.authService = authService;
         this.usuarioRepository = usuarioRepository;
-        this.passwordEncoder=passwordEncoder;
-        this.vehiculoRepository= vehiculoRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.vehiculoRepository = vehiculoRepository;
+        this.webSocketService = webSocketService; // <--- ASIGNACIÓN
     }
 
     // Muestra formulario de registro
@@ -103,14 +109,10 @@ public class AuthController {
         }
 
         try {
-
-
-
             if (usuarioRepository.findByEmail(email).isPresent()) {
                 redirectAttributes.addFlashAttribute("errorPasajero", "El correo electrónico ya está registrado.");
                 return "redirect:/auth/registro";
             }
-
 
             Pasajero pasajero = new Pasajero();
             pasajero.setNombreCompleto(nombre + " " + apellido);
@@ -120,8 +122,15 @@ public class AuthController {
             pasajero.setRol(Rol.PASAJERO);
             pasajero.setEstadoValidacion(EstadoValidacion.APROBADO);
 
-
             usuarioRepository.save(pasajero);
+
+            // 4. <--- NOTIFICACIÓN AL ADMIN (PASAJERO)
+            try {
+                webSocketService.notificarNuevoRegistroAdmin(email, "PASAJERO");
+            } catch (Exception e) {
+                System.out.println("Error enviando notificación socket: " + e.getMessage());
+                // No detenemos el registro si falla la notificación
+            }
 
             redirectAttributes.addFlashAttribute("success", "Registro exitoso. Por favor inicia sesión.");
             return "redirect:/auth/login";
@@ -144,7 +153,6 @@ public class AuthController {
             @RequestParam String placa,
             @RequestParam String marca,
             @RequestParam String modelo,
-
             @RequestParam String color,
             @RequestParam String tarjetaPropiedad,
             @RequestParam String soat,
@@ -188,6 +196,13 @@ public class AuthController {
             vehiculo= vehiculoRepository.save(vehiculo);
             conductor.setVehiculos(List.of(new ObjectId(vehiculo.getId())));
             usuarioRepository.save(conductor);
+
+            // 4. <--- NOTIFICACIÓN AL ADMIN (CONDUCTOR)
+            try {
+                webSocketService.notificarNuevoRegistroAdmin(email, "CONDUCTOR");
+            } catch (Exception e) {
+                System.out.println("Error enviando notificación socket: " + e.getMessage());
+            }
 
             redirectAttributes.addFlashAttribute("success", "Registro exitoso. Por favor inicia sesión.");
             return "redirect:/auth/login";

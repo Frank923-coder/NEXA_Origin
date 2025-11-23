@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/auth")
@@ -15,18 +16,22 @@ public class PasswordResetController {
     private PasswordResetService passwordResetService;
 
     @GetMapping("/forgot-password")
-    public String showForgotPasswordForm() {
+    public String showForgotPasswordForm(Model model) {
         return "auth/forgot-password";
     }
 
+    // CORRECCIÓN DE DISEÑO: Cambiado de ResponseEntity a String (Redirect)
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> processForgotPassword(@RequestParam String email) {
+    public String processForgotPassword(@RequestParam String email, RedirectAttributes redirectAttributes) {
         try {
             passwordResetService.initiatePasswordReset(email);
-            return ResponseEntity.ok("Se ha enviado un correo con instrucciones");
+            // Esto inyecta la variable 'success' que tu HTML está esperando
+            redirectAttributes.addFlashAttribute("success", "Se ha enviado un enlace a tu correo.");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            // Esto inyecta la variable 'error' para tu alerta roja
+            redirectAttributes.addFlashAttribute("error", "Error: " + e.getMessage());
         }
+        return "redirect:/auth/forgot-password";
     }
 
     @GetMapping("/reset-password")
@@ -35,16 +40,26 @@ public class PasswordResetController {
         return "auth/reset-password";
     }
 
+    // CORRECCIÓN DE DISEÑO: Manejo consistente de la vista
     @PostMapping("/reset-password")
-    @ResponseBody
-    public ResponseEntity<?> processResetPassword(
+    public String processResetPassword(
             @RequestParam String token,
-            @RequestParam String newPassword) {
+            @RequestParam String newPassword,
+            @RequestParam String confirmPassword, // Agregamos validación simple aquí también
+            RedirectAttributes redirectAttributes) {
+
+        if (!newPassword.equals(confirmPassword)) {
+            redirectAttributes.addFlashAttribute("error", "Las contraseñas no coinciden.");
+            return "redirect:/auth/reset-password?token=" + token;
+        }
+
         try {
             passwordResetService.resetPassword(token, newPassword);
-            return ResponseEntity.ok("Contraseña restablecida exitosamente");
+            redirectAttributes.addFlashAttribute("success", "Contraseña restablecida exitosamente. Ya puedes iniciar sesión.");
+            return "redirect:/auth/login"; // Redirigir al login tras éxito
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "Error al restablecer: " + e.getMessage());
+            return "redirect:/auth/reset-password?token=" + token;
         }
     }
 }

@@ -8,12 +8,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link th:href="@{/css/modal.css}" rel="stylesheet">
     <link th:href="@{/css/Dashboard_C.css}" rel="stylesheet">
-    <link rel="icon" href="/icon/NEXA_ICO.ico">
+    <link rel="icon" th:href="@{/icon/NEXA_ICO.ico}">
 </head>
 <body>
 <div class="sidebar">
     <div class="sidebar-header">
-<!--        <img th:src="@{/img/perfil.png}" class="profile-pic" id="profilePicDisplay">-->
+        <img th:src="@{/img/perfil.png}" class="profile-pic" id="profilePicDisplay">
         <div class="logo-text" id="usernameDisplay">Conductor</div>
         <button class="toggle-btn"><i class="fas fa-angle-double-left"></i></button>
     </div>
@@ -22,12 +22,13 @@
         <li data-section="historial"><i class="fas fa-history"></i><span class="text">Historial</span></li>
         <li data-section="solicitudes"><i class="fas fa-car"></i><span class="text">Solicitudes</span></li>
         <li data-section="billetera"><i class="fas fa-dollar"></i><span class="text">Billetera</span></li>
-        <li class="logout-item" onclick="document.getElementById('logoutForm').submit()">
-            <form id="logoutForm" th:action="@{/auth/logout}" method="post">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                <i class="fas fa-sign-out-alt"></i>
-                <span class="logout-text">Cerrar sesión</span>
-            </form>
+        <form th:action="@{/auth/logout}" method="post" id="logout-form" style="display: none;">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        </form>
+
+        <li onclick="openConfirmModal('Cerrar Sesión', '¿Estás seguro de que deseas cerrar sesión?', 'logout')">
+            <i class="fas fa-sign-out-alt"></i>
+            <span class="text">Cerrar sesión</span>
         </li>
     </ul>
 </div>
@@ -39,11 +40,16 @@
         <br><br>
         <div class="setting-box">
             <span><i class="fas fa-bell"></i> Notificaciones para recibir nuevas solicitudes</span>
-            <input type="checkbox">
+            <label class="switch">
+                <input type="checkbox" id="chkNotificaciones">
+                <span class="slider round"></span>
+            </label>
         </div>
         <div class="setting-box">
             <span><i class="fas fa-key"></i> Cambiar contraseña</span>
-            <button>CAMBIAR</button>
+            <a th:href="@{/profile/change-password}" style="text-decoration: none;">
+                <button type="button" style="cursor: pointer;">CAMBIAR</button>
+            </a>
         </div>
         <div class="setting-box">
             <span><i class="fas fa-moon"></i> <span id="darkModeText">Modo oscuro</span></span>
@@ -147,11 +153,28 @@
         <div id="detallesViajeContent"></div>
     </div>
 </div>
-
+<div class="confirm-modal-overlay" id="confirm-modal" style="display: none;">
+    <div class="confirm-modal-content">
+        <div class="confirm-modal-header">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3 id="confirm-modal-title">Título de Confirmación</h3>
+        </div>
+        <p id="confirm-modal-message">Mensaje de confirmación...</p>
+        <div class="confirm-modal-actions">
+            <button class="btn-cancel" onclick="closeConfirmModal()">
+                Cancelar
+            </button>
+            <button class="btn-confirm-danger" id="confirm-modal-btn-yes">
+                Confirmar
+            </button>
+        </div>
+    </div>
+</div>
 <!-- Primero carga tus scripts -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 <script src="/js/Dashboard_C.js"></script>
+<script src="/js/mapAnimations.js"></script>
 
 <!-- Luego carga Google Maps sin callback -->
 <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD-lMXvr0vMKjw97iEX9QibzK0TCx2TAMY&libraries=places&v=weekly&loading=async"></script>

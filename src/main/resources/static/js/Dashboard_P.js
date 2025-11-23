@@ -1100,6 +1100,105 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+/* =================================== */
+/* ===== LÓGICA MODAL CONFIRMACIÓN ===== */
+/* =================================== */
+
+const confirmModal = document.getElementById('confirm-modal');
+const confirmBtnYes = document.getElementById('confirm-modal-btn-yes');
+const confirmTitle = document.getElementById('confirm-modal-title');
+const confirmMessage = document.getElementById('confirm-modal-message');
+
+/**
+ * Abre el modal de confirmación genérico.
+ * @param {string} title - El título para el modal.
+ * @param {string} message - El mensaje de pregunta.
+ * @param {string} actionId - Un ID para saber qué acción ejecutar (ej: 'logout', 'deleteUser')
+ */
+function openConfirmModal(title, message, actionId) {
+    if (!confirmModal || !confirmBtnYes || !confirmTitle || !confirmMessage) {
+        console.error("Elementos del modal de confirmación no encontrados");
+        return;
+    }
+
+    // 1. Poblar el modal con el texto
+    confirmTitle.textContent = title;
+    confirmMessage.textContent = message;
+
+    // 2. Guardar la acción a ejecutar en el botón de confirmación
+    // Usamos data-attributes, una práctica estándar y limpia.
+    confirmBtnYes.dataset.actionId = actionId;
+
+    // 3. Mostrar el modal
+    confirmModal.style.display = 'flex';
+    document.body.style.overflow = "hidden"; // Evita scroll de fondo
+}
+
+/**
+ * Cierra el modal de confirmación.
+ */
+function closeConfirmModal() {
+    if (!confirmModal) return;
+    confirmModal.style.display = 'none';
+    document.body.style.overflow = "auto"; // Restaura scroll
+}
+
+/**
+ * Ejecuta la acción guardada en el botón 'Confirmar'.
+ */
+function executeConfirmAction() {
+    const actionId = confirmBtnYes.dataset.actionId;
+
+    // Aquí es donde la "reutilización" brilla.
+    // Puedes añadir más 'case' para otras acciones.
+    switch (actionId) {
+        case 'logout':
+            // Busca el formulario de logout y lo envía.
+            const logoutForm = document.getElementById('logout-form');
+            if (logoutForm) {
+                logoutForm.submit();
+            } else {
+                console.error("El formulario 'logout-form' no se encontró.");
+            }
+            break;
+
+        case 'delete-user':
+            // EJEMPLO FUTURO:
+            // console.log("Lógica para borrar usuario...");
+            break;
+
+        case 'approve-all':
+            // EJEMPLO FUTURO:
+            // console.log("Lógica para aprobar todo...");
+            break;
+
+        default:
+            console.warn("Acción de confirmación desconocida:", actionId);
+    }
+
+    // Cierra el modal después de ejecutar la acción
+    closeConfirmModal();
+}
+
+// --- Event Listeners Globales ---
+// 1. Asignar el clic al botón de confirmación
+if (confirmBtnYes) {
+    confirmBtnYes.addEventListener('click', executeConfirmAction);
+}
+
+// 2. (Opcional) Cerrar modal si se hace clic fuera del contenido
+if (confirmModal) {
+    confirmModal.addEventListener('click', (e) => {
+        // Si el clic fue en el overlay (fondo) y no en el contenido
+        if (e.target === confirmModal) {
+            closeConfirmModal();
+        }
+    });
+}
+
+// Asignar funciones al objeto 'window' para que los 'onclick' del HTML funcionen
+window.openConfirmModal = openConfirmModal;
+window.closeConfirmModal = closeConfirmModal;
 /* Asegurar que las funciones estén en el ámbito global */
 window.initMap = initMap;
 window.showSection = showSection;

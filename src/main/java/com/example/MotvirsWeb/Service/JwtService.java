@@ -21,10 +21,6 @@ import java.util.stream.Collectors;
 @Service
 public class JwtService {
 
-    // 1. Deberás añadir estas propiedades a tu application.properties
-    // Ejemplo:
-    // jwt.secret=tu-clave-secreta-super-larga-y-segura-aqui-1234567890
-    // jwt.expiration=86400000 // (24 horas en milisegundos)
 
     @Value("${jwt.secret}")
     private String SECRET_KEY;

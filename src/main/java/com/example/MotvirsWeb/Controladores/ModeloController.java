@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/ml")
+@RequestMapping("/api/admin/ml")
 public class ModeloController {
 
     @Autowired
@@ -21,10 +21,8 @@ public class ModeloController {
     @Autowired
     private ModeloInfoRepository modeloInfoRepository;
 
-    /**
-     * Endpoint para forzar el re-entrenamiento del modelo.
-     */
-    @GetMapping("/entrenar") // <-- Esto responde a /api/ml/entrenar
+
+    @GetMapping("/entrenar")
     public ResponseEntity<String> entrenarModelo() {
         try {
             String arbol = satisfaccionService.entrenarModelo();
@@ -36,11 +34,8 @@ public class ModeloController {
         }
     }
 
-    /**
-     * Endpoint para que tu página web muestre el resultado.
-     * Lee el último resultado guardado en MongoDB.
-     */
-    @GetMapping("/resultado") // <-- Esto responde a /api/ml/resultado
+
+    @GetMapping("/resultado")
     public ResponseEntity<?> obtenerResultadoModelo() {
         // Busca el último modelo entrenado guardado en la BD
         Optional<ModeloInfo> info = modeloInfoRepository

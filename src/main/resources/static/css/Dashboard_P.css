@@ -971,3 +971,221 @@ tr:hover {
         width: 100%;
     }
 }
+/* --- Nuevo: Mejoras para Tabletas Pequeñas y Móviles Grandes (481px a 768px) --- */
+@media (max-width: 768px) {
+    /* Ajustes del Main Content */
+    .main {
+        margin-left: 70px; /* Mantiene el espacio del sidebar colapsado */
+        padding: 20px 20px; /* Reduce el padding lateral para aprovechar espacio */
+        min-height: 100vh; /* Asegura que el main content ocupe al menos el alto de la vista */
+    }
+
+    /* Ajustes de la barra lateral (Sidebar) */
+    .sidebar {
+        width: 70px; /* Colapsado por defecto en móviles */
+        padding: 15px 5px; /* Reduce el padding */
+        border-radius: 0; /* Elimina los bordes redondeados para un look más limpio en el borde de la pantalla */
+    }
+
+    .sidebar .logo-text,
+    .sidebar .text {
+        display: none;
+    }
+
+    .sidebar-header {
+        margin-bottom: 15px; /* Reduce el margen */
+    }
+
+    .profile-pic {
+        width: 45px; /* Reduce un poco el tamaño de la foto de perfil */
+        height: 45px;
+        border-width: 2px;
+    }
+
+    /* Elementos del listado del sidebar */
+    li {
+        padding: 10px 0; /* Reduce el padding vertical */
+    }
+
+    /* Encabezados y títulos */
+    .h21 {
+        margin-left: 0;
+        text-align: center;
+        font-size: 1.5em; /* Asegura un buen tamaño de encabezado */
+    }
+
+    /* Tablas: Forzar el desplazamiento horizontal si es necesario */
+    table {
+        display: block;
+        overflow-x: auto; /* Permite scroll horizontal si la tabla es más ancha que la pantalla */
+        white-space: nowrap;
+    }
+
+    /* Configuración */
+    .setting-box {
+        flex-direction: column; /* Apila el contenido de configuración */
+        align-items: flex-start;
+        padding: 15px;
+    }
+
+    /* Viajes */
+    .ride-request-container {
+        gap: 15px;
+    }
+}
+
+
+/* --- Afinando la Query para Móviles Pequeños (<= 480px) --- */
+@media (max-width: 480px) {
+    .main {
+        padding: 10px; /* Más reducción del padding para pantallas muy pequeñas */
+        margin-left: 70px; /* Se mantiene para no chocar con el sidebar */
+    }
+
+    /* Formularios y filtros */
+    .filters {
+        flex-direction: column; /* Apila los filtros verticalmente */
+        gap: 8px;
+    }
+
+    .filters input,
+    .filters button,
+    .filters select {
+        width: 100%;
+        margin: 0 !important;
+    }
+
+    /* Botones de acción (ej. Request Ride) */
+    .action-buttons {
+        flex-direction: column; /* Apila los botones de acción */
+        gap: 10px;
+    }
+
+    .primary-btn,
+    .secondary-btn {
+        width: 100%;
+        padding: 10px 15px; /* Ajusta el padding de los botones */
+        font-size: 11px;
+    }
+
+    /* Contenedor del mapa */
+    .map-container {
+        height: 250px; /* Reduce la altura del mapa para que ocupe menos espacio */
+    }
+
+    /* Opciones de pago: De 3 columnas a 2 */
+    .options-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .option-card span {
+        font-size: 11px; /* Hace el texto un poco más pequeño para caber */
+    }
+
+    /* Modal */
+    .modal-content {
+        margin: 10% auto; /* Centra mejor verticalmente en móviles */
+    }
+}
+
+/* =================================== */
+/* ===== ESTILOS PARA MODAL DE CONFIRMACIÓN ===== */
+/* =================================== */
+
+.confirm-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 79, 120, 0.5); /* Usando tu fondo de modal */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1050; /* Por debajo del toast, pero encima de todo lo demás */
+}
+
+.confirm-modal-content {
+    background: var(--bg-modal);
+    padding: 32px;
+    border-radius: 16px;
+    width: 450px;
+    max-width: 90%;
+    box-shadow: var(--box-shadow);
+    border-top: 5px solid var(--warning); /* Borde de advertencia */
+    animation: modalOpen 0.3s ease; /* Reutilizando tu animación */
+    text-align: center;
+}
+
+.confirm-modal-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.confirm-modal-header i {
+    font-size: 40px;
+    color: var(--warning);
+    margin-bottom: 16px;
+}
+
+.confirm-modal-header h3 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.confirm-modal-content p {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+    line-height: 1.6;
+}
+
+.confirm-modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+}
+
+/* Botón Genérico de Modal (compartido) */
+.confirm-modal-actions button {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Botón de Cancelar */
+.btn-cancel {
+    background: var(--bg-card);
+    border: 2px solid var(--light-gray);
+    color: var(--text-secondary);
+}
+
+.btn-cancel:hover {
+    background: var(--light-gray);
+    border-color: var(--light-gray);
+    color: var(--text-primary);
+}
+
+/* Botón de Confirmar (Peligro) */
+.btn-confirm-danger {
+    background: var(--danger);
+    color: white;
+    border: 2px solid var(--danger);
+}
+
+.btn-confirm-danger:hover {
+    background: #d32f2f; /* Un rojo más oscuro */
+    border-color: #d32f2f;
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+    transform: translateY(-2px);
+}
