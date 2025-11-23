@@ -6,12 +6,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 @Service
 public class EmailService {
 
     @Autowired
     private JavaMailSender mailSender;
+
+    @Value("${app.base-url:}") // El valor puede estar vacío
+    private String configuredBaseUrl;
 
     // Inyectamos el correo configurado para saber a dónde enviar las notificaciones
     @Value("${spring.mail.username}")
@@ -42,4 +46,21 @@ public class EmailService {
             // Aquí podrías lanzar una excepción personalizada si quisieras manejarlo en el controller
         }
     }
+    private String getBaseUrl() {
+        // 1. Si baseUrl está configurado explícitamente, úsalo
+        if (StringUtils.hasText(configuredBaseUrl)) {
+            return configuredBaseUrl;
+        }
+
+        // 2. Detectar si estamos en Azure App Service
+        String azureWebsiteHostname = System.getenv("WEBSITE_HOSTNAME");
+        if (azureWebsiteHostname != null && !azureWebsiteHostname.isEmpty()) {
+            // Ya estás en Azure, usa HTTPS
+            return "https://" + azureWebsiteHostname;
+        }
+
+        // 3. Por defecto para desarrollo local
+        return "http://localhost:8080/";
+    }
+
 }
