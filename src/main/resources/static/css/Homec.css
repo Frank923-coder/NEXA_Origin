@@ -516,17 +516,16 @@ span{
     color: #fff;
   }
 
-  .btn_Reg {
-    margin: 0;
+    .btn_Reg {
+    margin: 10px auto !important; /* 10px arriba/abajo para separarlos, auto a los lados para centrar */
     padding: 10px 20px;
-    display: inline-block !important;
+    display: block !important; /* Asegura que se comporten como bloque */
     text-align: center;
     font-size: 14px;
     border-radius: 25px;
-    width: fit-content !important;
-    height: auto !important;
-    max-width: 180px;
-  }
+    width: 80% !important; /* Que no sean diminutos, que ocupen espacio */
+    max-width: 200px;
+     }
 
   .navbar .all-links li:has(.btn_Reg) {
     border-bottom: none;
