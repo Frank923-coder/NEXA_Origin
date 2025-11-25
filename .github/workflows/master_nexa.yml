@@ -1,7 +1,7 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy JAR app to Azure Web App - nexa
+name: Build and deploy JAR app to Azure Web App - NEXA
 
 on:
   push:
@@ -49,15 +49,15 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_D5B60403105847059457C8693E04327B }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_49EC0032F2C54456B33147E61A9AFA0F }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_D01B6E2F488B47ED9FA788A73F45A43C }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_10C2A4D904A84874898880E5FFD74E8F }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_623A3CA0FEC04450843E79A355008825 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_E7022DFAEC154767BBA03CD9A16A309D }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'nexa'
+          app-name: 'NEXA'
           slot-name: 'Production'
           package: '*.jar'
           
