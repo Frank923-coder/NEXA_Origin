@@ -516,16 +516,17 @@ span{
     color: #fff;
   }
 
-    .btn_Reg {
-    margin: 10px auto !important; /* 10px arriba/abajo para separarlos, auto a los lados para centrar */
+  .btn_Reg {
+    margin: 0;
     padding: 10px 20px;
-    display: block !important; /* Asegura que se comporten como bloque */
+    display: inline-block !important;
     text-align: center;
     font-size: 14px;
     border-radius: 25px;
-    width: 80% !important; /* Que no sean diminutos, que ocupen espacio */
-    max-width: 200px;
-     }
+    width: fit-content !important;
+    height: auto !important;
+    max-width: 180px;
+  }
 
   .navbar .all-links li:has(.btn_Reg) {
     border-bottom: none;
@@ -664,5 +665,32 @@ span{
   .content a {
     font-size: 13px;
     padding: 8px 16px;
+  }
+}
+
+/* Solución para las imágenes del equipo */
+.team .cards .card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px 20px;
+}
+
+.team .card img {
+  width: 200px;  /* Reduce el tamaño del contenedor */
+  height: 200px; /* Mantén proporción cuadrada */
+  object-fit: contain; /* Muestra la imagen completa SIN cortar */
+  object-position: center;
+  margin-bottom: 15px;
+  border-radius: 50%; /* Mantiene el círculo */
+  background: #f5f5f5; /* Fondo opcional si la imagen tiene transparencia */
+  padding: 10px; /* Espacio interno opcional */
+}
+
+/* Para móviles, reduce aún más el tamaño */
+@media screen and (max-width: 560px) {
+  .team .card img {
+    width: 150px;
+    height: 150px;
   }
 }

@@ -926,8 +926,10 @@ tr:hover {
 .dark-mode .vehicle-info {
     background-color: #1a3a4a;
 }
+* ===================================== */
+/* ===== RESPONSIVE PARA TABLETS ===== */
+/* ===================================== */
 
-/* Media Queries */
 @media (max-width: 768px) {
     .sidebar {
         width: 70px;
@@ -941,11 +943,43 @@ tr:hover {
     .main {
         margin-left: 70px;
         padding: 20px;
+        min-height: 100vh;
     }
 
     .h21 {
         margin-left: 0;
         text-align: center;
+        font-size: 1.5em;
+    }
+
+    .sidebar-header {
+        margin-bottom: 15px;
+    }
+
+    .profile-pic {
+        width: 45px;
+        height: 45px;
+        border-width: 2px;
+    }
+
+    li {
+        padding: 10px 0;
+    }
+
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .setting-box {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 15px;
+    }
+
+    .ride-request-container {
+        gap: 15px;
     }
 
     .options-grid {
@@ -953,98 +987,18 @@ tr:hover {
     }
 }
 
+/* ========================================= */
+/* ===== RESPONSIVE PARA MÓVILES ===== */
+/* ========================================= */
+
 @media (max-width: 480px) {
     .main {
         padding: 15px;
+        margin-left: 70px;
     }
 
-    .options-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .action-buttons {
-        flex-direction: column;
-    }
-
-    .primary-btn,
-    .secondary-btn {
-        width: 100%;
-    }
-}
-/* --- Nuevo: Mejoras para Tabletas Pequeñas y Móviles Grandes (481px a 768px) --- */
-@media (max-width: 768px) {
-    /* Ajustes del Main Content */
-    .main {
-        margin-left: 70px; /* Mantiene el espacio del sidebar colapsado */
-        padding: 20px 20px; /* Reduce el padding lateral para aprovechar espacio */
-        min-height: 100vh; /* Asegura que el main content ocupe al menos el alto de la vista */
-    }
-
-    /* Ajustes de la barra lateral (Sidebar) */
-    .sidebar {
-        width: 70px; /* Colapsado por defecto en móviles */
-        padding: 15px 5px; /* Reduce el padding */
-        border-radius: 0; /* Elimina los bordes redondeados para un look más limpio en el borde de la pantalla */
-    }
-
-    .sidebar .logo-text,
-    .sidebar .text {
-        display: none;
-    }
-
-    .sidebar-header {
-        margin-bottom: 15px; /* Reduce el margen */
-    }
-
-    .profile-pic {
-        width: 45px; /* Reduce un poco el tamaño de la foto de perfil */
-        height: 45px;
-        border-width: 2px;
-    }
-
-    /* Elementos del listado del sidebar */
-    li {
-        padding: 10px 0; /* Reduce el padding vertical */
-    }
-
-    /* Encabezados y títulos */
-    .h21 {
-        margin-left: 0;
-        text-align: center;
-        font-size: 1.5em; /* Asegura un buen tamaño de encabezado */
-    }
-
-    /* Tablas: Forzar el desplazamiento horizontal si es necesario */
-    table {
-        display: block;
-        overflow-x: auto; /* Permite scroll horizontal si la tabla es más ancha que la pantalla */
-        white-space: nowrap;
-    }
-
-    /* Configuración */
-    .setting-box {
-        flex-direction: column; /* Apila el contenido de configuración */
-        align-items: flex-start;
-        padding: 15px;
-    }
-
-    /* Viajes */
-    .ride-request-container {
-        gap: 15px;
-    }
-}
-
-
-/* --- Afinando la Query para Móviles Pequeños (<= 480px) --- */
-@media (max-width: 480px) {
-    .main {
-        padding: 10px; /* Más reducción del padding para pantallas muy pequeñas */
-        margin-left: 70px; /* Se mantiene para no chocar con el sidebar */
-    }
-
-    /* Formularios y filtros */
     .filters {
-        flex-direction: column; /* Apila los filtros verticalmente */
+        flex-direction: column;
         gap: 8px;
     }
 
@@ -1055,42 +1009,359 @@ tr:hover {
         margin: 0 !important;
     }
 
-    /* Botones de acción (ej. Request Ride) */
     .action-buttons {
-        flex-direction: column; /* Apila los botones de acción */
+        flex-direction: column;
         gap: 10px;
     }
 
     .primary-btn,
     .secondary-btn {
         width: 100%;
-        padding: 10px 15px; /* Ajusta el padding de los botones */
+        padding: 10px 15px;
         font-size: 11px;
     }
 
-    /* Contenedor del mapa */
     .map-container {
-        height: 250px; /* Reduce la altura del mapa para que ocupe menos espacio */
+        height: 250px;
     }
 
-    /* Opciones de pago: De 3 columnas a 2 */
     .options-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
     }
 
     .option-card span {
-        font-size: 11px; /* Hace el texto un poco más pequeño para caber */
+        font-size: 11px;
+    }
+
+    .modal-content {
+        margin: 10% auto;
+        width: 95%;
+    }
+
+    .h21 {
+        font-size: 1.3em;
+    }
+}
+
+/* ========================================= */
+/* ===== PANTALLAS MUY PEQUEÑAS (312px) ===== */
+/* ========================================= */
+
+@media (max-width: 360px) {
+    /* Sidebar - Más compacto */
+    .sidebar {
+        width: 60px;
+        padding: 10px 3px;
+        border-top-right-radius: 15px;
+        border-bottom-right-radius: 15px;
+    }
+
+    .main {
+        margin-left: 60px;
+        padding: 10px;
+        overflow-x: hidden;
+    }
+
+    .profile-pic {
+        width: 40px;
+        height: 40px;
+        border-width: 2px;
+    }
+
+    li {
+        padding: 8px 0;
+    }
+
+    li i {
+        font-size: 18px;
+    }
+
+    /* Encabezados */
+    .h21 {
+        font-size: 1.1em;
+        margin-bottom: 12px;
+        word-wrap: break-word;
+    }
+
+    h2, h3 {
+        font-size: 1em;
+    }
+
+    h4 {
+        font-size: 0.9em;
+    }
+
+    /* Tarjetas (Cards) */
+    .stat-card,
+    .ride-card,
+    .notification-card,
+    .setting-box {
+        padding: 12px;
+        margin-bottom: 10px;
+    }
+
+    .stat-card i {
+        font-size: 24px;
+    }
+
+    .stat-card h3 {
+        font-size: 1.5em;
+    }
+
+    .stat-card p {
+        font-size: 0.85em;
+    }
+
+    /* Grillas y Opciones */
+    .options-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .option-card {
+        padding: 12px;
+    }
+
+    .option-card i {
+        font-size: 28px;
+    }
+
+    .option-card span {
+        font-size: 10px;
+    }
+
+    /* Formularios e Inputs */
+    input,
+    select,
+    textarea {
+        font-size: 12px;
+        padding: 8px;
+    }
+
+    .form-group label {
+        font-size: 12px;
+    }
+
+    /* Botones */
+    .primary-btn,
+    .secondary-btn,
+    button {
+        padding: 8px 12px;
+        font-size: 10px;
+        letter-spacing: 0.3px;
+    }
+
+    .action-buttons {
+        gap: 8px;
+    }
+
+    /* Tablas - Forzar scroll horizontal */
+    .table-container {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 10px 0;
+    }
+
+    table {
+        font-size: 10px;
+        display: table;
+        width: max-content;
+        min-width: 100%;
+        table-layout: auto;
+    }
+
+    table th,
+    table td {
+        padding: 8px 6px;
+        min-width: 90px;
+        white-space: nowrap;
+    }
+
+    table th {
+        font-size: 10px;
+        background-color: #5ebdda;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    /* Ajustar anchos específicos de columnas */
+    table th:first-child,
+    table td:first-child {
+        min-width: 90px;
+    }
+
+    table th:nth-child(2),
+    table td:nth-child(2) {
+        min-width: 80px;
+    }
+
+    table th:nth-child(3),
+    table td:nth-child(3) {
+        min-width: 150px;
+        white-space: normal;
+        word-wrap: break-word;
+    }
+
+    table th:nth-child(4),
+    table td:nth-child(4) {
+        min-width: 150px;
+        white-space: normal;
+        word-wrap: break-word;
+    }
+
+    /* Mapa */
+    .map-container {
+        height: 200px;
+    }
+
+    /* Ride Request Container */
+    .ride-request-container {
+        gap: 10px;
+        padding: 0;
+        max-width: 100%;
+    }
+
+    .search-panel,
+    .ride-details-panel {
+        padding: 12px;
+        border-radius: 8px;
+    }
+
+    .location-input {
+        font-size: 11px;
+        padding: 10px 10px 10px 35px;
+    }
+
+    .input-group i {
+        font-size: 14px;
+        left: 10px;
     }
 
     /* Modal */
     .modal-content {
-        margin: 10% auto; /* Centra mejor verticalmente en móviles */
+        width: 95%;
+        max-width: 95%;
+        padding: 16px;
+        margin: 0;
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+
+    .modal {
+        padding: 5px;
+        align-items: flex-start;
+        padding-top: 20px;
+    }
+
+    .modal-content h2 {
+        font-size: 1.1em;
+        margin-bottom: 12px;
+    }
+
+    .modal-header {
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+
+    .close-btn {
+        font-size: 24px;
+        line-height: 1;
+        padding: 5px;
+    }
+
+    .modal-body {
+        padding: 0;
+    }
+
+    .modal-body p {
+        font-size: 12px;
+        margin: 8px 0;
+    }
+
+    /* Filtros */
+    .filters {
+        gap: 6px;
+        margin-bottom: 12px;
+    }
+
+    .filters input[type="text"],
+    .filters input[type="date"] {
+        font-size: 11px;
+        padding: 8px 10px;
+        width: 100%;
+    }
+
+    .filters button {
+        font-size: 10px;
+        padding: 8px 16px;
+        white-space: nowrap;
+    }
+
+    /* Dashboard específico */
+    .dashboard-container {
+        gap: 10px;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    /* Historial de viajes */
+    .ride-history-container {
+        padding: 12px;
+    }
+
+    /* Notificaciones */
+    .notification-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .notification-card i {
+        margin-bottom: 8px;
+    }
+
+    /* Detalles del viaje */
+    .detail-row {
+        padding: 8px 0;
+        gap: 10px;
+    }
+
+    .detail-row i {
+        font-size: 16px;
+        width: 20px;
+    }
+
+    .detail-label {
+        font-size: 11px;
+    }
+
+    .detail-value {
+        font-size: 12px;
+    }
+
+    .details-header h3 {
+        font-size: 14px;
+    }
+
+    .details-header i {
+        font-size: 16px;
+    }
+
+    /* Toggle switches */
+    .toggle-switch {
+        transform: scale(0.85);
     }
 }
 
-/* =================================== */
-/* ===== ESTILOS PARA MODAL DE CONFIRMACIÓN ===== */
-/* =================================== */
+/* ===================================== */
+/* ===== MODAL DE CONFIRMACIÓN ===== */
+/* ===================================== */
 
 .confirm-modal-overlay {
     position: fixed;
@@ -1098,11 +1369,12 @@ tr:hover {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 79, 120, 0.5); /* Usando tu fondo de modal */
+    background: rgba(0, 79, 120, 0.5);
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1050; /* Por debajo del toast, pero encima de todo lo demás */
+    z-index: 1050;
+    padding: 10px;
 }
 
 .confirm-modal-content {
@@ -1112,8 +1384,8 @@ tr:hover {
     width: 450px;
     max-width: 90%;
     box-shadow: var(--box-shadow);
-    border-top: 5px solid var(--warning); /* Borde de advertencia */
-    animation: modalOpen 0.3s ease; /* Reutilizando tu animación */
+    border-top: 5px solid var(--warning);
+    animation: modalOpen 0.3s ease;
     text-align: center;
 }
 
@@ -1148,9 +1420,9 @@ tr:hover {
     display: flex;
     justify-content: center;
     gap: 16px;
+    flex-wrap: wrap;
 }
 
-/* Botón Genérico de Modal (compartido) */
 .confirm-modal-actions button {
     padding: 12px 24px;
     border-radius: 8px;
@@ -1163,7 +1435,6 @@ tr:hover {
     letter-spacing: 0.5px;
 }
 
-/* Botón de Cancelar */
 .btn-cancel {
     background: var(--bg-card);
     border: 2px solid var(--light-gray);
@@ -1176,7 +1447,6 @@ tr:hover {
     color: var(--text-primary);
 }
 
-/* Botón de Confirmar (Peligro) */
 .btn-confirm-danger {
     background: var(--danger);
     color: white;
@@ -1184,8 +1454,179 @@ tr:hover {
 }
 
 .btn-confirm-danger:hover {
-    background: #d32f2f; /* Un rojo más oscuro */
+    background: #d32f2f;
     border-color: #d32f2f;
     box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
     transform: translateY(-2px);
+}
+
+/* ===================================== */
+/* ===== AJUSTES MODAL RESPONSIVE ===== */
+/* ===================================== */
+
+@media (max-width: 480px) {
+    .modal {
+        padding: 10px;
+    }
+
+    .modal-content {
+        padding: 20px;
+        width: 95%;
+        max-width: 95%;
+    }
+
+    .confirm-modal-content {
+        padding: 20px;
+        width: 95%;
+    }
+
+    .confirm-modal-header i {
+        font-size: 32px;
+        margin-bottom: 12px;
+    }
+
+    .confirm-modal-header h3 {
+        font-size: 18px;
+    }
+
+    .confirm-modal-content p {
+        font-size: 13px;
+        margin-bottom: 18px;
+    }
+
+    .confirm-modal-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .confirm-modal-actions button {
+        width: 100%;
+        padding: 10px 16px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 360px) {
+    .modal {
+        padding: 5px;
+        align-items: flex-start;
+        padding-top: 10px;
+    }
+
+    .modal-content {
+        width: 98%;
+        max-width: 98%;
+        padding: 14px;
+        border-radius: 10px;
+        margin: 0;
+    }
+
+    .confirm-modal-content {
+        padding: 16px;
+        border-radius: 12px;
+        width: 98%;
+        max-width: 98%;
+    }
+
+    .confirm-modal-header i {
+        font-size: 28px;
+        margin-bottom: 10px;
+    }
+
+    .confirm-modal-header h3 {
+        font-size: 16px;
+    }
+
+    .confirm-modal-content p {
+        font-size: 12px;
+        margin-bottom: 16px;
+    }
+
+    .confirm-modal-actions button {
+        padding: 8px 12px;
+        font-size: 11px;
+    }
+}
+
+/* ===================================== */
+/* ===== UTILIDADES ADICIONALES ===== */
+/* ===================================== */
+
+/* Prevenir overflow horizontal */
+* {
+    box-sizing: border-box;
+}
+
+@media (max-width: 360px) {
+    /* Ocultar elementos no críticos si es necesario */
+    .hide-on-tiny {
+        display: none !important;
+    }
+
+    /* Text overflow */
+    .text-truncate {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Aplicar truncate a celdas de tabla largas */
+    table td {
+        max-width: 200px;
+    }
+
+    /* Mantener columnas específicas sin truncar */
+    table td:first-child,
+    table td:nth-child(2) {
+        white-space: nowrap;
+        max-width: none;
+    }
+
+    /* Forzar scroll en el contenedor de la tabla */
+    .main section:has(table) {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Scrollbar más visible y táctil */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #f0f0f0;
+        border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #5ebdda;
+        border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #00c4ff;
+    }
+
+    /* Para navegadores que soportan scrollbar-width */
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: #5ebdda #f0f0f0;
+    }
+
+    /* Espaciado reducido */
+    .mb-4 {
+        margin-bottom: 8px !important;
+    }
+
+    .mt-4 {
+        margin-top: 8px !important;
+    }
+
+    /* Badges y pills más pequeños */
+    .badge,
+    .pill {
+        font-size: 9px;
+        padding: 3px 6px;
+    }
 }

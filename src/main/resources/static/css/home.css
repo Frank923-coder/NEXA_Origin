@@ -528,88 +528,115 @@ span {
 }
 
 /* Móviles grandes */
-/* Móviles y Tablets (Menú Hamburguesa) */
 @media screen and (max-width: 860px) {
-
-  /* Ajuste del header para que no se monte contenido */
-  .navbar {
-    padding: 10px 20px;
-  }
-
-  /* Contenedor de enlaces (El menú lateral) */
   .navbar .all-links {
     position: fixed;
     left: -100%;
-    top: 0; /* Desde arriba del todo */
-    width: 280px; /* Un ancho fijo más estándar */
+    width: min(280px, 75vw);
+    display: block;
     height: 100vh;
-    background: #1a1a1a; /* Fondo oscuro sólido */
-    display: flex;
-    flex-direction: column;
-    align-items: center; /* Centrar elementos horizontalmente */
-    padding-top: 80px; /* Espacio para no tapar el logo/cruz si la hubiera */
+    top: 70px;
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(10px);
     transition: left 0.3s ease;
-    box-shadow: 5px 0 15px rgba(0, 0, 0, 0.5);
-    z-index: 999; /* Asegurar que esté encima de todo */
+    padding-top: 20px;
+    overflow-y: auto;
   }
 
-  /* Cuando el menú está activo */
   .navbar #menu-toggler:checked ~ .all-links {
     left: 0;
+    box-shadow: 5px 0 15px rgba(0, 0, 0, 0.3);
   }
 
-  /* Estilo de los items de lista */
   .navbar .all-links li {
-    width: 100%;
-    text-align: center;
-    margin: 10px 0;
-    border: none; /* Quitamos bordes para limpieza visual */
+    font-size: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
 
-  /* Enlaces normales */
+  .navbar .all-links li:last-child {
+    border-bottom: none;
+    padding: 15px 0;
+  }
+
   .navbar .all-links li a {
     display: block;
-    font-size: 18px;
-    color: #fff;
-    padding: 10px;
+    padding: 12px 20px;
+    margin: 0;
   }
 
   .navbar .all-links li a.btn_Reg {
-      color: #004F78 !important; /* Forzamos el color azul oscuro */
-      background: #fff;
-      width: 80%;
-      margin: 0 auto; /* Centrado */
-      display: block; /* Asegura que tome el ancho */
-    }
-
-  /* Botón Hamburguesa */
-  .navbar #hamburger-btn {
-    display: block;
-    z-index: 1000; /* Encima del menú desplegado */
+    display: inline-block;
+    padding: 10px 20px;
+    margin: 0 20px;
+    width: fit-content;
+    max-width: 200px;
   }
 
-  /* Ajuste específico para los botones de Auth (Registro/Login) en móvil */
-  .navbar .all-links .auth-buttons {
-    margin: 5px 0;
+  .navbar #hamburger-btn {
+    display: block;
   }
 
   .btn_Reg {
-    margin: 0 !important; /* Sobrescribir márgenes de escritorio */
-    display: inline-block;
-    width: 80%; /* Que ocupen buen ancho en el menú */
+    margin: 0;
+    padding: 10px 20px;
+    display: inline-block !important;
     text-align: center;
-    padding: 12px 20px;
-    background: #fff;
-    color: #004F78;
+    font-size: 14px;
+    border-radius: 25px;
+    width: fit-content !important;
+    height: auto !important;
+    max-width: 180px;
   }
 
-  /* Ajustes generales del cuerpo para móvil */
-  .homepage .content h1 {
-    font-size: 2rem;
+  .navbar .all-links li:has(.btn_Reg) {
+    border-bottom: none;
+    text-align: center;
+    padding: 15px 20px;
+  }
+
+  section .cards {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
   }
 
   .homepage {
-    background-position: center; /* Mejor encuadre en móvil */
+    background-attachment: scroll;
+  }
+
+  .homepage .content {
+    padding: 20px;
+    height: 100%;
+    justify-content: center;
+  }
+
+  .homepage .content h1 {
+    font-size: 2rem;
+    margin-bottom: 15px;
+  }
+
+  .homepage .content .text {
+    font-size: 1rem;
+    margin-bottom: 30px;
+  }
+
+  .content a {
+    font-size: 16px;
+    padding: 10px 25px;
+  }
+
+  .contact .row {
+    grid-template-columns: 1fr;
+    gap: 30px;
+    margin: 40px 0 60px;
+  }
+
+  footer div {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  footer a {
+    margin: 5px 10px;
   }
 }
 
@@ -691,5 +718,32 @@ span {
   .content a {
     font-size: 13px;
     padding: 8px 16px;
+  }
+}
+
+/* Solución para las imágenes del equipo */
+.team .cards .card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px 20px;
+}
+
+.team .card img {
+  width: 200px;  /* Reduce el tamaño del contenedor */
+  height: 200px; /* Mantén proporción cuadrada */
+  object-fit: contain; /* Muestra la imagen completa SIN cortar */
+  object-position: center;
+  margin-bottom: 15px;
+  border-radius: 50%; /* Mantiene el círculo */
+  background: #f5f5f5; /* Fondo opcional si la imagen tiene transparencia */
+  padding: 10px; /* Espacio interno opcional */
+}
+
+/* Para móviles, reduce aún más el tamaño */
+@media screen and (max-width: 560px) {
+  .team .card img {
+    width: 150px;
+    height: 150px;
   }
 }
