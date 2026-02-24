@@ -1,139 +1,13 @@
-/* Map styles */
-const lightMapStyles = [
-  {
-      featureType: "all",
-      elementType: "geometry",
-      stylers: [{ color: "#f5f5f5" }]
-  },
-  {
-      featureType: "all",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#333333" }, { weight: 1 }]
-  },
-  {
-      featureType: "all",
-      elementType: "labels.text.stroke",
-      stylers: [{ color: "#ffffff" }, { weight: 2 }]
-  },
-  {
-      featureType: "road",
-      elementType: "geometry",
-      stylers: [{ color: "#e0e0e0" }]
-  },
-  {
-      featureType: "road.highway",
-      elementType: "geometry",
-      stylers: [{ color: "#a6adc4" }]
-  },
-  {
-      featureType: "road.arterial",
-      elementType: "geometry",
-      stylers: [{ color: "#bdbdbd" }]
-  },
-  {
-      featureType: "road.local",
-      elementType: "geometry",
-      stylers: [{ color: "#ffffff" }]
-  },
-  {
-      featureType: "water",
-      elementType: "geometry",
-      stylers: [{ color: "#90caf9" }]
-  },
-  {
-      featureType: "landscape",
-      elementType: "geometry",
-      stylers: [{ color: "#e0e0e0" }]
-  },
-  {
-      featureType: "poi",
-      elementType: "geometry",
-      stylers: [{ color: "#eeeeee" }]
-  },
-  {
-      featureType: "poi.park",
-      elementType: "geometry",
-      stylers: [{ color: "#c8e6c9" }]
-  },
-  {
-      featureType: "transit",
-      elementType: "geometry",
-      stylers: [{ color: "#e0e0e0" }]
-  },
-  {
-      featureType: "poi",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#555555" }]
-  }
-];
+/* =============================================
+ * MAPA — Leaflet.js + CartoDB + OSRM + Photon
+ * ============================================= */
 
-const darkMapStyles = [
-  {
-      featureType: "all",
-      elementType: "geometry",
-      stylers: [{ color: "#1e1e1e" }]
-  },
-  {
-      featureType: "all",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#bbbbbb" }, { weight: 1 }]
-  },
-  {
-      featureType: "all",
-      elementType: "labels.text.stroke",
-      stylers: [{ color: "#2a2a2a" }, { weight: 2 }]
-  },
-  {
-      featureType: "road",
-      elementType: "geometry",
-      stylers: [{ color: "#444444" }]
-  },
-  {
-      featureType: "road.highway",
-      elementType: "geometry",
-      stylers: [{ color: "#4688f1" }]
-  },
-  {
-      featureType: "road.arterial",
-      elementType: "geometry",
-      stylers: [{ color: "#666666" }]
-  },
-  {
-      featureType: "road.local",
-      elementType: "geometry",
-      stylers: [{ color: "#555555" }]
-  },
-  {
-      featureType: "water",
-      elementType: "geometry",
-      stylers: [{ color: "#0288d1" }]
-  },
-  {
-      featureType: "landscape",
-      elementType: "geometry",
-      stylers: [{ color: "#2a2a2a" }]
-  },
-  {
-      featureType: "poi",
-      elementType: "geometry",
-      stylers: [{ color: "#333333" }]
-  },
-  {
-      featureType: "poi.park",
-      elementType: "geometry",
-      stylers: [{ color: "#388e3c" }]
-  },
-  {
-      featureType: "transit",
-      elementType: "geometry",
-      stylers: [{ color: "#444444" }]
-  },
-  {
-      featureType: "poi",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#888888" }]
-  }
-];
+// Tile layer URLs (CartoDB — modo claro y oscuro)
+const TILE_LIGHT = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+const TILE_DARK  = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+const TILE_ATTR  = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>';
+
+/* ---- UI helpers ---- */
 
 function showSection(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -144,16 +18,19 @@ function toggleDarkMode() {
   const isDark = document.body.classList.toggle('dark-mode');
   localStorage.setItem('darkMode', isDark);
   document.getElementById('darkModeText').textContent = isDark ? 'Modo claro' : 'Modo oscuro';
-  if (map) {
-      map.setOptions({ styles: isDark ? darkMapStyles : lightMapStyles });
+  if (currentTileLayer && map) {
+    map.removeLayer(currentTileLayer);
+    currentTileLayer = L.tileLayer(isDark ? TILE_DARK : TILE_LIGHT, {
+      attribution: TILE_ATTR, maxZoom: 19
+    }).addTo(map);
   }
 }
 
 function checkDarkMode() {
   const isDark = localStorage.getItem('darkMode') === 'true';
   if (isDark) {
-      document.body.classList.add('dark-mode');
-      document.getElementById('darkModeText').textContent = 'Modo claro';
+    document.body.classList.add('dark-mode');
+    document.getElementById('darkModeText').textContent = 'Modo claro';
   }
 }
 
@@ -164,18 +41,18 @@ function guardarCambios() {
   const profilePicDisplay = document.getElementById('profilePicDisplay');
 
   if (username) {
-      usernameDisplay.textContent = username;
-      localStorage.setItem('username', username);
+    usernameDisplay.textContent = username;
+    localStorage.setItem('username', username);
   }
 
   if (profilePicInput.files && profilePicInput.files[0]) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-          const imageData = e.target.result;
-          profilePicDisplay.src = imageData;
-          localStorage.setItem('profilePic', imageData);
-      }
-      reader.readAsDataURL(profilePicInput.files[0]);
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const imageData = e.target.result;
+      profilePicDisplay.src = imageData;
+      localStorage.setItem('profilePic', imageData);
+    };
+    reader.readAsDataURL(profilePicInput.files[0]);
   }
 }
 
@@ -184,12 +61,12 @@ function loadProfileData() {
   const savedProfilePic = localStorage.getItem('profilePic');
 
   if (savedUsername) {
-      document.getElementById('usernameInput').value = savedUsername;
-      document.getElementById('usernameDisplay').textContent = savedUsername;
+    document.getElementById('usernameInput').value = savedUsername;
+    document.getElementById('usernameDisplay').textContent = savedUsername;
   }
 
   if (savedProfilePic) {
-      document.getElementById('profilePicDisplay').src = savedProfilePic;
+    document.getElementById('profilePicDisplay').src = savedProfilePic;
   }
 }
 
@@ -202,14 +79,120 @@ function resetPerfil() {
   document.getElementById('profilePicInput').value = '';
 }
 
-let map, marcador, directionsService, directionsRenderer, infoWindowRuta;
-let trafficLayer;
-let originMarker, destinationMarker;
+/* ---- Variables globales del mapa ---- */
+let map, currentTileLayer;
+let marcadorLeaflet = null;
+let originLeaflet = null;
+let destinationLeaflet = null;
+let routePolyline = null;
 let estimatedPrice = 0;
 let calculatedDistanceKm = 0;
+let originLatLng = null;
+let destinationLatLng = null;
 
+/* ---- Utilidad: convierte segundos OSRM a texto legible ---- */
+function segundosATexto(segundos) {
+  const totalMin = Math.round(segundos / 60);
+  if (totalMin < 60) return `${totalMin} min`;
+  const horas = Math.floor(totalMin / 60);
+  const mins  = totalMin % 60;
+  return mins > 0 ? `${horas} h ${mins} min` : `${horas} h`;
+}
+
+/* ---- Geocodificación inversa con Nominatim ---- */
+function reverseGeocode(lat, lng, callback) {
+  fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`, {
+    headers: { 'Accept-Language': 'es', 'User-Agent': 'NEXA-App/1.0' }
+  })
+  .then(r => r.json())
+  .then(data => callback(data.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`))
+  .catch(() => callback(`${lat.toFixed(5)}, ${lng.toFixed(5)}`));
+}
+
+/* ---- Autocomplete con Photon (Komoot) ---- */
+let photonDebounceOrigen = null;
+let photonDebounceDestino = null;
+
+function setupPhotonAutocomplete(inputId, onSelect) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+
+  const debounceRef = inputId === 'origen' ? 'photonDebounceOrigen' : 'photonDebounceDestino';
+
+  // Contenedor relativo para el dropdown
+  const wrapper = input.parentNode;
+  wrapper.style.position = 'relative';
+
+  const dropdown = document.createElement('ul');
+  dropdown.id = `photon-dropdown-${inputId}`;
+  dropdown.style.cssText = `
+    position: absolute; top: 100%; left: 0; right: 0; z-index: 9999;
+    background: #fff; border: 1px solid #ccc; border-radius: 6px;
+    list-style: none; margin: 2px 0 0; padding: 0; max-height: 220px;
+    overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,.15); display: none;
+  `;
+  wrapper.appendChild(dropdown);
+
+  // Restricción a Cartagena, Colombia
+  const LAT_MIN = 10.25, LAT_MAX = 10.55, LON_MIN = -75.75, LON_MAX = -75.35;
+
+  input.addEventListener('input', () => {
+    if (inputId === 'origen') clearTimeout(photonDebounceOrigen);
+    else clearTimeout(photonDebounceDestino);
+
+    const q = input.value.trim();
+    if (q.length < 3) { dropdown.style.display = 'none'; return; }
+
+    const timer = setTimeout(() => {
+      fetch(
+        `https://photon.komoot.io/api/?q=${encodeURIComponent(q + ' Cartagena Colombia')}&limit=6&lang=es&lat=10.4055&lon=-75.5037`
+      )
+      .then(r => r.json())
+      .then(data => {
+        dropdown.innerHTML = '';
+        const features = (data.features || []).filter(f => {
+          const [lon, lat] = f.geometry.coordinates;
+          return lat >= LAT_MIN && lat <= LAT_MAX && lon >= LON_MIN && lon <= LON_MAX;
+        });
+
+        if (features.length === 0) { dropdown.style.display = 'none'; return; }
+
+        features.forEach(f => {
+          const props = f.properties;
+          const label = [props.name, props.street, props.city, props.country]
+            .filter(Boolean).join(', ');
+          const [lon, lat] = f.geometry.coordinates;
+
+          const li = document.createElement('li');
+          li.textContent = label;
+          li.style.cssText = 'padding: 9px 12px; cursor: pointer; font-size: 0.83rem; border-bottom: 1px solid #eee;';
+          li.addEventListener('mouseenter', () => li.style.background = '#f0f4ff');
+          li.addEventListener('mouseleave', () => li.style.background = '');
+          li.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            input.value = label;
+            dropdown.style.display = 'none';
+            onSelect({ lat, lng: lon, label });
+          });
+          dropdown.appendChild(li);
+        });
+        dropdown.style.display = 'block';
+      })
+      .catch(() => { dropdown.style.display = 'none'; });
+    }, 400);
+
+    if (inputId === 'origen') photonDebounceOrigen = timer;
+    else photonDebounceDestino = timer;
+  });
+
+  input.addEventListener('blur', () => {
+    setTimeout(() => { dropdown.style.display = 'none'; }, 200);
+  });
+}
+
+/* ---- initMap: Leaflet ---- */
 function initMap() {
-  const centro = { lat: 10.4055, lng: -75.5037 };
+  const centro = [10.4055, -75.5037];
   const isDarkMode = document.body.classList.contains('dark-mode');
 
   const mapContainer = document.querySelector('.map-container');
@@ -218,406 +201,252 @@ function initMap() {
   loadingOverlay.innerHTML = '<div class="spinner"></div>';
   mapContainer.appendChild(loadingOverlay);
 
-  const geocoder = new google.maps.Geocoder();
-
-  map = new google.maps.Map(document.getElementById("map"), {
-      center: centro,
-      zoom: 14,
-      styles: isDarkMode ? darkMapStyles : lightMapStyles,
-      disableDefaultUI: true,
-      zoomControl: true,
-      streetViewControl: true,
-      fullscreenControl: true,
-      mapTypeControlOptions: {
-          style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
-      }
+  map = L.map('map', {
+    center: centro,
+    zoom: 14,
+    zoomControl: true
   });
 
-  google.maps.event.addListenerOnce(map, 'tilesloaded', () => {
+  currentTileLayer = L.tileLayer(isDarkMode ? TILE_DARK : TILE_LIGHT, {
+    attribution: TILE_ATTR,
+    maxZoom: 19
+  }).addTo(map);
+
+  // Quitar spinner cuando carguen los tiles
+  map.once('layeradd', () => {
+    setTimeout(() => {
       loadingOverlay.classList.add('hidden');
       setTimeout(() => loadingOverlay.remove(), 500);
+    }, 600);
   });
 
-  trafficLayer = new google.maps.TrafficLayer();
-
-  marcador = new google.maps.Marker({
-      map: map,
-      position: centro,
-      draggable: true,
-      icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          fillColor: "#a6adc4",
-          fillOpacity: 1,
-          strokeColor: "#fff",
-          strokeWeight: 2,
-          scale: 8
-      },
-      animation: google.maps.Animation.DROP
+  // Marcador inicial (arrastrable)
+  const defaultIcon = L.divIcon({
+    className: '',
+    html: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+             style="fill:#a6adc4;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))">
+             <circle cx="12" cy="12" r="10" stroke="#fff" stroke-width="2.5"/>
+           </svg>`,
+    iconSize: [22, 22],
+    iconAnchor: [11, 11]
   });
 
-  setInterval(() => {
-      const currentOpacity = marcador.getIcon().fillOpacity;
-      marcador.setIcon({
-          path: google.maps.SymbolPath.CIRCLE,
-          fillColor: "#a6adc4",
-          fillOpacity: currentOpacity === 1 ? 0.7 : 1,
-          strokeColor: "#fff",
-          strokeWeight: 2,
-          scale: 8
-      });
-  }, 1500);
+  marcadorLeaflet = L.marker(centro, { draggable: true, icon: defaultIcon }).addTo(map);
 
-  marcador.addListener('dragstart', function() {
-      this.setIcon({
-          path: google.maps.SymbolPath.CIRCLE,
-          fillColor: "#8f97b1",
-          fillOpacity: 1,
-          strokeColor: "#fff",
-          strokeWeight: 2,
-          scale: 8
-      });
-      this.setAnimation(null);
+  marcadorLeaflet.on('dragend', function() {
+    const { lat, lng } = marcadorLeaflet.getLatLng();
+    originLatLng = { lat, lng };
+    reverseGeocode(lat, lng, (address) => {
+      document.getElementById('origen').value = address;
+    });
   });
 
-  marcador.addListener('dragend', function() {
-      this.setIcon({
-          path: google.maps.SymbolPath.CIRCLE,
-          fillColor: "#4caf50",
-          fillOpacity: 1,
-          strokeColor: "#fff",
-          strokeWeight: 2,
-          scale: 8
-      });
-      this.setAnimation(google.maps.Animation.BOUNCE);
-      setTimeout(() => this.setAnimation(null), 1000);
-
-      const posicion = this.getPosition();
-      geocoder.geocode({ location: posicion }, (results, status) => {
-          if (status === "OK" && results[0]) {
-              document.getElementById("origen").value = results[0].formatted_address;
-          }
-      });
+  // Autocomplete
+  setupPhotonAutocomplete('origen', ({ lat, lng }) => {
+    map.setView([lat, lng], 16);
+    marcadorLeaflet.setLatLng([lat, lng]);
+    originLatLng = { lat, lng };
   });
 
-  directionsService = new google.maps.DirectionsService();
-  directionsRenderer = new google.maps.DirectionsRenderer({
-      suppressMarkers: true,
-      polylineOptions: {
-          strokeColor: '#1E3A8A',
-          strokeOpacity: 0.8,
-          strokeWeight: 5,
-          zIndex: 1
-      }
-  });
-  directionsRenderer.setMap(map);
-
-  infoWindowRuta = new google.maps.InfoWindow({
-      maxWidth: 280,
-      minWidth: 200,
-      disableAutoPan: true
-  });
-
-  const origenInput = document.getElementById("origen");
-  const destinoInput = document.getElementById("destino");
-
-  const boundsCartagena = new google.maps.LatLngBounds(
-      { lat: 10.3, lng: -75.6 },
-      { lat: 10.5, lng: -75.4 }
-  );
-
-  const opcionesAutocompletado = {
-      bounds: boundsCartagena,
-      strictBounds: true,
-      componentRestrictions: { country: "CO" },
-      fields: ["address_components", "geometry", "name", "formatted_address"]
-  };
-
-  const autocompleteOrigen = new google.maps.places.Autocomplete(origenInput, opcionesAutocompletado);
-  const autocompleteDestino = new google.maps.places.Autocomplete(destinoInput, opcionesAutocompletado);
-
-  autocompleteOrigen.addListener('place_changed', function() {
-      const place = autocompleteOrigen.getPlace();
-      if (!place.geometry) return;
-
-      map.setCenter(place.geometry.location);
-      marcador.setPosition(place.geometry.location);
-      animateMarker(marcador);
+  setupPhotonAutocomplete('destino', ({ lat, lng }) => {
+    destinationLatLng = { lat, lng };
   });
 }
 
+/* ---- animateMarker: placeholder (Leaflet no tiene API de animación nativa) ---- */
 function animateMarker(marker) {
-  marker.setAnimation(google.maps.Animation.BOUNCE);
-  setTimeout(() => marker.setAnimation(null), 1000);
+  // No-op: marcador ya se mueve visualmente al cambiar latLng
 }
 
-function calcularRuta() {
-  const origen = document.getElementById("origen").value;
-  const destino = document.getElementById("destino").value;
+/* ---- Limpiar ruta ---- */
+function limpiarRuta() {
+  if (routePolyline)      { map.removeLayer(routePolyline);      routePolyline = null; }
+  if (originLeaflet)      { map.removeLayer(originLeaflet);      originLeaflet = null; }
+  if (destinationLeaflet) { map.removeLayer(destinationLeaflet); destinationLeaflet = null; }
 
-  if (!origen || !destino) {
-      showError("Por favor, completa ambos campos.");
-      return;
+  document.getElementById('origen').value  = '';
+  document.getElementById('destino').value = '';
+  document.getElementById('detalle-precio').innerHTML = `
+    <div class="empty-state">
+      <i class="fas fa-route"></i>
+      <p>Ingresa origen y destino para calcular tu viaje</p>
+    </div>`;
+
+  const precioInput = document.getElementById('precioInput');
+  precioInput.value = '';
+  precioInput.placeholder = 'Ej: 15.000';
+  document.getElementById('requestRideBtn').disabled = true;
+  calculatedDistanceKm = 0;
+  originLatLng = null;
+  destinationLatLng = null;
+}
+
+/* ---- Centrar mapa con geolocalización ---- */
+function centrarMapa() {
+  if (!navigator.geolocation) {
+    showError('Tu navegador no soporta geolocalización.');
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    ({ coords }) => {
+      const { latitude, longitude } = coords;
+      map.setView([latitude, longitude], 15);
+      marcadorLeaflet.setLatLng([latitude, longitude]);
+      originLatLng = { lat: latitude, lng: longitude };
+      reverseGeocode(latitude, longitude, (address) => {
+        document.getElementById('origen').value = address;
+      });
+    },
+    () => showError('No se pudo obtener tu ubicación.')
+  );
+}
+
+/* ---- Capa de tráfico: eliminada (no existe alternativa gratuita) ---- */
+function alternarTrafico() {
+  showError('La capa de tráfico en tiempo real no está disponible en esta versión.');
+}
+
+/* ---- Calcular ruta con OSRM ---- */
+function calcularRuta() {
+  const origenText  = document.getElementById('origen').value.trim();
+  const destinoText = document.getElementById('destino').value.trim();
+
+  if (!origenText || !destinoText) {
+    showError('Por favor, completa ambos campos.'); return;
+  }
+  if (!originLatLng || !destinationLatLng) {
+    showError('Selecciona origen y destino desde las sugerencias del buscador.'); return;
   }
 
+  // Spinner
   const mapContainer = document.querySelector('.map-container');
   let loadingOverlay = document.querySelector('.map-loading');
   if (!loadingOverlay) {
-      loadingOverlay = document.createElement('div');
-      loadingOverlay.className = 'map-loading';
-      loadingOverlay.innerHTML = '<div class="spinner"></div>';
-      mapContainer.appendChild(loadingOverlay);
+    loadingOverlay = document.createElement('div');
+    loadingOverlay.className = 'map-loading';
+    loadingOverlay.innerHTML = '<div class="spinner"></div>';
+    mapContainer.appendChild(loadingOverlay);
   }
 
-  document.getElementById("detalle-precio").innerHTML = `
-      <div class="loading-state">
-          <div class="spinner"></div>
-          <p>Calculando la mejor ruta...</p>
-      </div>
-  `;
+  document.getElementById('detalle-precio').innerHTML = `
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Calculando la mejor ruta...</p>
+    </div>`;
 
-  const request = {
-      origin: origen,
-      destination: destino,
-      travelMode: google.maps.TravelMode.DRIVING,
-      provideRouteAlternatives: false,
-  };
+  const { lat: oLat, lng: oLng } = originLatLng;
+  const { lat: dLat, lng: dLng } = destinationLatLng;
+  const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${oLng},${oLat};${dLng},${dLat}?overview=full&geometries=geojson&steps=true`;
 
-  directionsService.route(request, function(result, status) {
+  fetch(osrmUrl)
+    .then(r => r.json())
+    .then(data => {
       loadingOverlay.classList.add('hidden');
       setTimeout(() => loadingOverlay.remove(), 500);
 
-      if (status === google.maps.DirectionsStatus.OK) {
-          if (originMarker) originMarker.setMap(null);
-          if (destinationMarker) destinationMarker.setMap(null);
-
-          directionsRenderer.setOptions({
-              polylineOptions: {
-                  strokeColor: '#1E3A8A',
-                  strokeOpacity: 0.4,
-                  strokeWeight: 5,
-                  zIndex: 1
-              }
-          });
-
-          let opacity = 0.4;
-          const animateRoute = setInterval(() => {
-              opacity += 0.1;
-              if (opacity >= 0.8) {
-                  clearInterval(animateRoute);
-                  opacity = 0.8;
-              }
-              directionsRenderer.setOptions({
-                  polylineOptions: {
-                      strokeColor: '#1E3A8A',
-                      strokeOpacity: opacity,
-                      strokeWeight: 5,
-                      zIndex: 1
-                  }
-              });
-          }, 50);
-
-          directionsRenderer.setDirections(result);
-
-          const ruta = result.routes[0].legs[0];
-          const distanciaKm = ruta.distance.value / 1000;
-          calculatedDistanceKm = distanciaKm;
-          const duracionTexto = ruta.duration.text;
-          estimatedPrice = 1000 + distanciaKm * 800;
-
-          originMarker = new google.maps.Marker({
-              position: ruta.start_location,
-              map: map,
-              icon: {
-                  url: 'data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="%23a6adc4"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>',
-                  scaledSize: new google.maps.Size(32, 32),
-                  anchor: new google.maps.Point(16, 32)
-              },
-              title: "Origen"
-          });
-
-          destinationMarker = new google.maps.Marker({
-              position: ruta.end_location,
-              map: map,
-              icon: {
-                  url: 'data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="%234caf50"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>',
-                  scaledSize: new google.maps.Size(32, 32),
-                  anchor: new google.maps.Point(16, 32)
-              },
-              title: "Destino"
-          });
-
-          [originMarker, destinationMarker].forEach(marker => {
-              setInterval(() => {
-                  const currentOpacity = marker.getIcon().fillOpacity || 1;
-                  marker.setIcon({
-                      url: marker.getIcon().url,
-                      scaledSize: marker.getIcon().scaledSize,
-                      anchor: marker.getIcon().anchor,
-                      fillOpacity: currentOpacity === 1 ? 0.7 : 1
-                  });
-              }, 1500);
-          });
-
-          updateRideDetails(distanciaKm, duracionTexto, estimatedPrice, ruta.steps);
-          document.getElementById("requestRideBtn").disabled = false;
-          showRouteInfo(ruta);
-
-          const precioInput = document.getElementById("precioInput");
-          precioInput.placeholder = `Ej: ${estimatedPrice.toLocaleString("es-CO")} COP`;
-          precioInput.removeAttribute('readonly');
-          precioInput.value = '';
-      } else {
-          let errorMessage = "No se pudo calcular la ruta. Verifica las direcciones.";
-          if (status === google.maps.DirectionsStatus.INVALID_REQUEST) {
-              errorMessage = "La solicitud de ruta no es válida. Intenta nuevamente.";
-          } else if (status === google.maps.DirectionsStatus.OVER_QUERY_LIMIT) {
-              errorMessage = "Límite de consultas excedido. Espera un momento.";
-          } else if (status === google.maps.DirectionsStatus.REQUEST_DENIED) {
-              errorMessage = "Acceso denegado. Verifica tu API key de Google Maps.";
-          } else if (status === google.maps.DirectionsStatus.UNKNOWN_ERROR) {
-              errorMessage = "Error desconocido. Intenta nuevamente.";
-          }
-
-          showError(errorMessage);
-          console.error("Error al calcular la ruta:", status, result);
+      if (!data.routes || data.routes.length === 0) {
+        showError('No se encontró una ruta entre esas direcciones.'); return;
       }
-  });
-}
 
-function updateRideDetails(distance, duration, price, steps) {
-  let instructionsHTML = '<div class="route-instructions"><h4><i class="fas fa-directions"></i> Instrucciones de Ruta</h4><ol>';
-  steps.forEach((step, index) => {
-      const instructionText = step.instructions || 'Instrucción no disponible';
-      instructionsHTML += `<li><span class="step-number">${index + 1}.</span> <span class="instruction-text">${instructionText}</span> <span class="step-distance">(${step.distance.text})</span></li>`;
-  });
-  instructionsHTML += '</ol></div>';
+      const route = data.routes[0];
+      const distanciaKm = route.distance / 1000;
+      calculatedDistanceKm = distanciaKm;
+      const duracionTexto = segundosATexto(route.duration);
+      estimatedPrice = 1000 + distanciaKm * 800;
 
-  document.getElementById("detalle-precio").innerHTML = `
-      <div class="detail-row">
+      // Limpiar capas previas
+      if (routePolyline)      { map.removeLayer(routePolyline);      routePolyline = null; }
+      if (originLeaflet)      { map.removeLayer(originLeaflet);      originLeaflet = null; }
+      if (destinationLeaflet) { map.removeLayer(destinationLeaflet); destinationLeaflet = null; }
+
+      // Polilínea de ruta
+      const coords = route.geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+      routePolyline = L.polyline(coords, {
+        color: '#1E3A8A', weight: 5, opacity: 0.8
+      }).addTo(map);
+      map.fitBounds(routePolyline.getBounds(), { padding: [45, 45] });
+
+      // Ícono SVG origen (gris)
+      const mkOrigenIcon = L.divIcon({
+        className: '',
+        html: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"
+                 style="fill:#a6adc4;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))">
+                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`,
+        iconSize: [28, 28], iconAnchor: [14, 28]
+      });
+      // Ícono SVG destino (verde)
+      const mkDestinoIcon = L.divIcon({
+        className: '',
+        html: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"
+                 style="fill:#4caf50;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))">
+                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`,
+        iconSize: [28, 28], iconAnchor: [14, 28]
+      });
+
+      originLeaflet      = L.marker([oLat, oLng], { icon: mkOrigenIcon  }).addTo(map).bindTooltip('Origen');
+      destinationLeaflet = L.marker([dLat, dLng], { icon: mkDestinoIcon }).addTo(map).bindTooltip('Destino');
+
+      // Instrucciones de ruta (steps OSRM)
+      const steps = route.legs[0]?.steps || [];
+      let instructionsHTML = '<div class="route-instructions"><h4><i class="fas fa-directions"></i> Instrucciones de Ruta</h4><ol>';
+      steps.forEach((step, index) => {
+        const instruccion = step.maneuver?.type
+          ? `${step.maneuver.modifier || ''} ${step.maneuver.type}`.trim()
+          : 'Continúa';
+        const distStep = step.distance >= 1000
+          ? `${(step.distance / 1000).toFixed(1)} km`
+          : `${Math.round(step.distance)} m`;
+        instructionsHTML += `<li><span class="step-number">${index + 1}.</span> <span class="instruction-text">${instruccion}</span> <span class="step-distance">(${distStep})</span></li>`;
+      });
+      instructionsHTML += '</ol></div>';
+
+      document.getElementById('detalle-precio').innerHTML = `
+        <div class="detail-row">
           <i class="fas fa-road"></i>
-          <div>
-              <span class="detail-label">Distancia:</span>
-              <span class="detail-value">${distance.toFixed(2)} km</span>
-          </div>
-      </div>
-      <div class="detail-row">
+          <div><span class="detail-label">Distancia:</span>
+               <span class="detail-value">${distanciaKm.toFixed(2)} km</span></div>
+        </div>
+        <div class="detail-row">
           <i class="fas fa-clock"></i>
-          <div>
-              <span class="detail-label">Duración:</span>
-              <span class="detail-value">${duration}</span>
-          </div>
-      </div>
-      <div class="detail-row">
+          <div><span class="detail-label">Duración:</span>
+               <span class="detail-value">${duracionTexto}</span></div>
+        </div>
+        <div class="detail-row">
           <i class="fas fa-money-bill-wave"></i>
-          <div>
-              <span class="detail-label">Precio estimado:</span>
-              <span class="detail-value price">$${price.toLocaleString("es-CO")} COP</span>
-          </div>
-      </div>
-      ${instructionsHTML}
-  `;
+          <div><span class="detail-label">Precio estimado:</span>
+               <span class="detail-value price">$${estimatedPrice.toLocaleString('es-CO')} COP</span></div>
+        </div>
+        ${instructionsHTML}`;
+
+      document.getElementById('requestRideBtn').disabled = false;
+      const precioInput = document.getElementById('precioInput');
+      precioInput.placeholder = `Ej: ${estimatedPrice.toLocaleString('es-CO')} COP`;
+      precioInput.removeAttribute('readonly');
+      precioInput.value = '';
+    })
+    .catch(err => {
+      loadingOverlay.classList.add('hidden');
+      setTimeout(() => loadingOverlay.remove(), 500);
+      showError('No se pudo calcular la ruta. Verifica tu conexión.');
+      console.error('Error OSRM:', err);
+    });
 }
 
-function showRouteInfo(route) {
-  const distanciaKm = route.distance.value / 1000;
-  const duracionTexto = route.duration.text;
-  const precioTotal = estimatedPrice;
-
-  const contenidoHTML = `
-      <div class="route-tooltip">
-          <div class="route-summary">
-              <div class="route-stat">
-                  <i class="fas fa-road"></i>
-                  <span>${distanciaKm.toFixed(2)} km</span>
-              </div>
-              <div class="route-stat">
-                  <i class="fas fa-clock"></i>
-                  <span>${duracionTexto}</span>
-              </div>
-          </div>
-          <div class="route-price">
-              <i class="fas fa-tag"></i>
-              <span>$${precioTotal.toLocaleString("es-CO")} COP</span>
-          </div>
-      </div>
-  `;
-
-  infoWindowRuta.setContent(contenidoHTML);
-  infoWindowRuta.setPosition(route.steps[Math.floor(route.steps.length / 2)].end_location);
-  infoWindowRuta.open(map);
-}
-
-function limpiarRuta() {
-  directionsRenderer.setMap(null);
-  if (originMarker) originMarker.setMap(null);
-  if (destinationMarker) destinationMarker.setMap(null);
-  document.getElementById("origen").value = "";
-  document.getElementById("destino").value = "";
-  document.getElementById("detalle-precio").innerHTML = `
-      <div class="empty-state">
-          <i class="fas fa-route"></i>
-          <p>Ingresa origen y destino para calcular tu viaje</p>
-      </div>
-  `;
-  const precioInput = document.getElementById("precioInput");
-  precioInput.value = "";
-  precioInput.placeholder = "Ej: 15.000";
-  document.getElementById("requestRideBtn").disabled = true;
-  infoWindowRuta.close();
-  calculatedDistanceKm = 0;
-}
-
-function centrarMapa() {
-  if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-          (position) => {
-              const pos = {
-                  lat: position.coords.latitude,
-                  lng: position.coords.longitude
-              };
-              map.setCenter(pos);
-              marcador.setPosition(pos);
-              animateMarker(marcador);
-
-              geocoder.geocode({ location: pos }, (results, status) => {
-                  if (status === "OK" && results[0]) {
-                      document.getElementById("origen").value = results[0].formatted_address;
-                  }
-              });
-          },
-          () => {
-              showError("No se pudo obtener tu ubicación. Usando ubicación predeterminada.");
-              map.setCenter({ lat: 10.4055, lng: -75.5037 });
-          }
-      );
-  } else {
-      showError("Tu navegador no soporta geolocalización. Usando ubicación predeterminada.");
-      map.setCenter({ lat: 10.4055, lng: -75.5037 });
-  }
-}
-
-function alternarTrafico() {
-  if (trafficLayer.getMap()) {
-      trafficLayer.setMap(null);
-      document.querySelector(".map-controls .fa-traffic-light").style.color = "";
-  } else {
-      trafficLayer.setMap(map);
-      document.querySelector(".map-controls .fa-traffic-light").style.color = "#a6adc4";
-  }
-}
-
+/* ---- showError ---- */
 function showError(message) {
-  const errorDiv = document.createElement("div");
-  errorDiv.className = "error-message";
+  const errorDiv = document.createElement('div');
+  errorDiv.className = 'error-message';
   errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
   document.body.appendChild(errorDiv);
   setTimeout(() => {
-      errorDiv.classList.add("fade-out");
-      setTimeout(() => errorDiv.remove(), 500);
+    errorDiv.classList.add('fade-out');
+    setTimeout(() => errorDiv.remove(), 500);
   }, 3000);
 }
 
-/* Funciones para mostrar/ocultar el modal de búsqueda de moto */
+/* =============================================
+ * MODAL BÚSQUEDA DE MOTO
+ * ============================================= */
 function showMotoModal(title, message = '', showDriverInfo = false, showProgress = false, progress = 0, origin = '', destination = '', driverData = {}) {
   const motoModal = document.getElementById('motoModal');
   const modalTitle = document.getElementById('modalTitle');
@@ -631,14 +460,12 @@ function showMotoModal(title, message = '', showDriverInfo = false, showProgress
   const driverName = document.getElementById('driverName');
   const driverStatus = document.getElementById('driverStatus');
 
-  /* Asegurarse de que el modal y sus elementos existen */
   if (!motoModal || !modalTitle || !modalMessage || !driverInfo || !progressContainer || !progressBar || !originText || !destinationText || !driverPhoto || !driverName || !driverStatus) {
     console.error('Faltan elementos en el DOM para mostrar el modal');
     showError('Error al mostrar el modal. Por favor, revisa la estructura HTML.');
     return;
   }
 
-  /* Actualizar contenido básico */
   modalTitle.textContent = title;
   if (message) {
     modalMessage.textContent = message;
@@ -647,14 +474,12 @@ function showMotoModal(title, message = '', showDriverInfo = false, showProgress
     modalMessage.style.display = 'none';
   }
 
-  /* Manejar la sección de información del conductor */
   if (showDriverInfo) {
     driverInfo.style.display = 'block';
     driverPhoto.src = driverData.driverPhoto || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
     driverName.textContent = driverData.driverName || 'Conductor no asignado';
     driverStatus.textContent = driverData.driverStatus || 'Preparándose para recogerte';
 
-    /* Añadir el botón de cancelar si no existe */
     let cancelBtn = driverInfo.querySelector('.action-buttons .cancel-btn');
     if (!cancelBtn) {
       const actionButtons = document.createElement('div');
@@ -662,8 +487,7 @@ function showMotoModal(title, message = '', showDriverInfo = false, showProgress
       actionButtons.innerHTML = `
         <button id="cancelRideBtn" class="btn cancel-btn">
           <i class="fas fa-times"></i> Cancelar viaje
-        </button>
-      `;
+        </button>`;
       driverInfo.appendChild(actionButtons);
       cancelBtn = document.getElementById('cancelRideBtn');
       cancelBtn.addEventListener('click', cancelRide);
@@ -672,7 +496,6 @@ function showMotoModal(title, message = '', showDriverInfo = false, showProgress
     driverInfo.style.display = 'none';
   }
 
-  /* Manejar la sección de progreso */
   if (showProgress) {
     progressContainer.style.display = 'block';
     progressBar.style.width = `${progress}%`;
@@ -682,7 +505,6 @@ function showMotoModal(title, message = '', showDriverInfo = false, showProgress
     progressContainer.style.display = 'none';
   }
 
-  /* Mostrar el modal con animación */
   motoModal.style.display = 'block';
   setTimeout(() => motoModal.classList.add('active'), 10);
 }
@@ -693,33 +515,25 @@ function hideMotoModal() {
     motoModal.classList.remove('active');
     setTimeout(() => {
       motoModal.style.display = 'none';
-      /* Restablecer el modal al estado inicial */
       const modalMessage = document.getElementById('modalMessage');
       const driverInfo = document.getElementById('driverInfo');
       const progressContainer = document.getElementById('progressContainer');
-      if (modalMessage) modalMessage.style.display = 'block';
-      if (driverInfo) driverInfo.style.display = 'none';
-      if (progressContainer) progressContainer.style.display = 'none';
+      if (modalMessage)        modalMessage.style.display = 'block';
+      if (driverInfo)          driverInfo.style.display = 'none';
+      if (progressContainer)   progressContainer.style.display = 'none';
     }, 200);
   }
 }
 
 function cancelRide() {
-  if (!currentServicioId) {
-    hideMotoModal();
-    return;
-  }
+  if (!currentServicioId) { hideMotoModal(); return; }
 
   fetch(`/pasajero/cancelar-viaje/${currentServicioId}`, {
     method: 'POST',
-    headers: {
-      'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value
-    }
+    headers: { 'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value }
   })
   .then(response => {
-    if (!response.ok) {
-      throw new Error('Error al cancelar el viaje');
-    }
+    if (!response.ok) throw new Error('Error al cancelar el viaje');
     hideMotoModal();
     showError('Viaje cancelado correctamente');
   })
@@ -729,7 +543,9 @@ function cancelRide() {
   });
 }
 
-/* WebSocket para actualizaciones en tiempo real */
+/* =============================================
+ * WEBSOCKET
+ * ============================================= */
 let stompClient = null;
 let currentServicioId = null;
 
@@ -769,60 +585,45 @@ function startWebSocket(userId) {
 }
 
 function handleServicioUpdate(servicio) {
-    console.log('Pasajero procesando estado:', servicio.estado, servicio);
-    currentServicioId = servicio.id;
+  console.log('Pasajero procesando estado:', servicio.estado, servicio);
+  currentServicioId = servicio.id;
 
-    const driverPhoto = servicio.conductor?.fotoUrl || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
-    const driverName = servicio.conductor?.nombre || 'Conductor asignado';
+  const driverPhoto = servicio.conductor?.fotoUrl || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
+  const driverName  = servicio.conductor?.nombre || 'Conductor asignado';
 
-    switch (servicio.estado) {
-        case 'ACEPTADO':
-            showMotoModal(
-                'Conductor asignado',
-                'Tu conductor está en camino',
-                true,
-                false,
-                0,
-                '',
-                '',
-                { driverPhoto, driverName, driverStatus: 'Preparándose para recogerte' }
-            );
-            break;
-        case 'EN_CURSO':
-            showMotoModal(
-                'Viaje en curso',
-                'Disfruta tu viaje',
-                true,
-                true,
-                50,
-                servicio.origen,
-                servicio.destino,
-                { driverPhoto, driverName, driverStatus: 'En camino' }
-            );
-            break;
-        case 'FINALIZADO':
-            console.log('Servicio FINALIZADO, redirigiendo a calificación');
-            hideMotoModal();
-            try {
-                window.location.href = `/rating?servicioId=${servicio.id}&rol=pasajero`;
-            } catch (error) {
-                console.error('Error al redirigir:', error);
-                showError('Error al redirigir a la página de calificación');
-            }
-            break;
-        case 'CANCELADO':
-            hideMotoModal();
-            showError('El conductor ha cancelado el viaje');
-            break;
-        default:
-            console.warn('Estado no manejado:', servicio.estado);
-    }
+  switch (servicio.estado) {
+    case 'ACEPTADO':
+      showMotoModal('Conductor asignado', 'Tu conductor está en camino', true, false, 0, '', '',
+        { driverPhoto, driverName, driverStatus: 'Preparándose para recogerte' });
+      break;
+    case 'EN_CURSO':
+      showMotoModal('Viaje en curso', 'Disfruta tu viaje', true, true, 50,
+        servicio.origen, servicio.destino,
+        { driverPhoto, driverName, driverStatus: 'En camino' });
+      break;
+    case 'FINALIZADO':
+      console.log('Servicio FINALIZADO, redirigiendo a calificación');
+      hideMotoModal();
+      try {
+        window.location.href = `/rating?servicioId=${servicio.id}&rol=pasajero`;
+      } catch (error) {
+        console.error('Error al redirigir:', error);
+        showError('Error al redirigir a la página de calificación');
+      }
+      break;
+    case 'CANCELADO':
+      hideMotoModal();
+      showError('El conductor ha cancelado el viaje');
+      break;
+    default:
+      console.warn('Estado no manejado:', servicio.estado);
+  }
 }
 
-/* Funciones adicionales (mantenidas como estaban) */
+/* Funciones adicionales */
 function showServicioModal(servicio, title, content) {
   hideServicioModal();
-  servicioModal = document.createElement('div');
+  const servicioModal = document.createElement('div');
   servicioModal.id = 'servicioModal';
   servicioModal.className = 'modal';
   servicioModal.innerHTML = `
@@ -831,11 +632,8 @@ function showServicioModal(servicio, title, content) {
         <h3>${title}</h3>
         <span class="close-btn" onclick="hideServicioModal()">×</span>
       </div>
-      <div class="modal-body">
-        ${content}
-      </div>
-    </div>
-  `;
+      <div class="modal-body">${content}</div>
+    </div>`;
   document.body.appendChild(servicioModal);
   setTimeout(() => servicioModal.classList.add('active'), 10);
 }
@@ -851,18 +649,14 @@ function hideServicioModal() {
 function cancelarViaje(servicioId) {
   fetch(`/pasajero/cancelar-viaje/${servicioId}`, {
     method: 'POST',
-    headers: {
-      'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value
-    }
+    headers: { 'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value }
   })
   .then(response => {
     if (!response.ok) throw new Error('Error al cancelar');
     hideMotoModal();
     showError('Viaje cancelado correctamente');
   })
-  .catch(error => {
-    showError(error.message || 'Error al cancelar el viaje');
-  });
+  .catch(error => showError(error.message || 'Error al cancelar el viaje'));
 }
 
 function subscribeToPasajeroTopic() {
@@ -875,150 +669,130 @@ function subscribeToPasajeroTopic() {
   }
 }
 
-// Variables para el historial
+/* =============================================
+ * HISTORIAL
+ * ============================================= */
 let historialDataPasajero = [];
 let currentPagePasajero = 1;
 const itemsPerPagePasajero = 5;
 
-// Función para cargar el historial del pasajero
 function cargarHistorialPasajero() {
-    fetch('/pasajero/historial')
-        .then(response => response.json())
-        .then(historial => {
-            historialDataPasajero = historial;
-            renderizarHistorialPasajero();
-        })
-        .catch(error => {
-            console.error('Error al cargar historial:', error);
-            showError("Error al cargar historial de viajes");
-        });
+  fetch('/pasajero/historial')
+    .then(response => response.json())
+    .then(historial => {
+      historialDataPasajero = historial;
+      renderizarHistorialPasajero();
+    })
+    .catch(error => {
+      console.error('Error al cargar historial:', error);
+      showError('Error al cargar historial de viajes');
+    });
 }
 
-// Función para renderizar el historial con paginación
 function renderizarHistorialPasajero(filteredData = historialDataPasajero) {
-    const tbody = document.getElementById('historialBody');
-    tbody.innerHTML = '';
+  const tbody = document.getElementById('historialBody');
+  tbody.innerHTML = '';
 
-    const start = (currentPagePasajero - 1) * itemsPerPagePasajero;
-    const end = start + itemsPerPagePasajero;
-    const paginatedData = filteredData.slice(start, end);
+  const start = (currentPagePasajero - 1) * itemsPerPagePasajero;
+  const end   = start + itemsPerPagePasajero;
+  const paginatedData = filteredData.slice(start, end);
 
-    paginatedData.forEach(viaje => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${new Date(viaje.fechaHora).toLocaleDateString()}</td>
-            <td>${new Date(viaje.fechaHora).toLocaleTimeString()}</td>
-            <td>${viaje.origen}</td>
-            <td>${viaje.destino}</td>
+  paginatedData.forEach(viaje => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${new Date(viaje.fechaHora).toLocaleDateString()}</td>
+      <td>${new Date(viaje.fechaHora).toLocaleTimeString()}</td>
+      <td>${viaje.origen}</td>
+      <td>${viaje.destino}</td>
+      <td>$${viaje.tarifa.toLocaleString('es-CO')}</td>
+      <td>
+        <button onclick="mostrarDetallesViajePasajero('${viaje.id}')">
+          <i class="fas fa-eye"></i>
+        </button>
+      </td>`;
+    tbody.appendChild(row);
+  });
 
-            <td>$${viaje.tarifa.toLocaleString("es-CO")}</td>
-            <td>
-                <button onclick="mostrarDetallesViajePasajero('${viaje.id}')">
-                    <i class="fas fa-eye"></i>
-                </button>
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
-
-    document.getElementById('pageInfo').textContent = `Página ${currentPagePasajero}`;
-    document.getElementById('prevPage').disabled = currentPagePasajero === 1;
-    document.getElementById('nextPage').disabled = end >= filteredData.length;
+  document.getElementById('pageInfo').textContent = `Página ${currentPagePasajero}`;
+  document.getElementById('prevPage').disabled = currentPagePasajero === 1;
+  document.getElementById('nextPage').disabled = end >= filteredData.length;
 }
 
-// Función para filtrar el historial
 function filtrarHistorialPasajero() {
-    const fecha = document.getElementById('filtroFecha').value;
-
-    const filteredData = historialDataPasajero.filter(viaje => {
-        const matchFecha = fecha ? new Date(viaje.fechaHora).toLocaleDateString() === new Date(fecha).toLocaleDateString() : true;
-
-        return matchFecha;
-    });
-
-    currentPagePasajero = 1;
-    renderizarHistorialPasajero(filteredData);
+  const fecha = document.getElementById('filtroFecha').value;
+  const filteredData = historialDataPasajero.filter(viaje => {
+    return fecha
+      ? new Date(viaje.fechaHora).toLocaleDateString() === new Date(fecha).toLocaleDateString()
+      : true;
+  });
+  currentPagePasajero = 1;
+  renderizarHistorialPasajero(filteredData);
 }
 
-// Función para resetear filtros
 function resetFiltrosHistorialPasajero() {
-    document.getElementById('filtroFecha').value = '';
-    document.getElementById('filtroConductor').value = '';
-    currentPagePasajero = 1;
-    renderizarHistorialPasajero();
+  document.getElementById('filtroFecha').value = '';
+  document.getElementById('filtroConductor').value = '';
+  currentPagePasajero = 1;
+  renderizarHistorialPasajero();
 }
 
-// Función para cambiar de página
 function cambiarPaginaPasajero(delta) {
-    currentPagePasajero += delta;
-    if (currentPagePasajero < 1) currentPagePasajero = 1;
-    const maxPage = Math.ceil(historialDataPasajero.length / itemsPerPagePasajero);
-    if (currentPagePasajero > maxPage) currentPagePasajero = maxPage;
-    renderizarHistorialPasajero();
+  currentPagePasajero += delta;
+  if (currentPagePasajero < 1) currentPagePasajero = 1;
+  const maxPage = Math.ceil(historialDataPasajero.length / itemsPerPagePasajero);
+  if (currentPagePasajero > maxPage) currentPagePasajero = maxPage;
+  renderizarHistorialPasajero();
 }
 
-// Función para mostrar detalles del viaje
 function mostrarDetallesViajePasajero(servicioId) {
-    fetch(`/pasajero/servicios/${servicioId}`)
-        .then(response => response.json())
-        .then(servicio => {
-            document.getElementById('detallesViajeContent').innerHTML = `
-                <div class="detail-row"><i class="fas fa-calendar"></i><span>Fecha:</span><span>${new Date(servicio.fechaHora).toLocaleDateString()}</span></div>
-                <div class="detail-row"><i class="fas fa-clock"></i><span>Hora:</span><span>${new Date(servicio.fechaHora).toLocaleTimeString()}</span></div>
-                <div class="detail-row"><i class="fas fa-map-marker-alt"></i><span>Origen:</span><span>${servicio.origen}</span></div>
-                <div class="detail-row"><i class="fas fa-flag-checkered"></i><span>Destino:</span><span>${servicio.destino}</span></div>
-
-                <div class="detail-row"><i class="fas fa-money-bill-wave"></i><span>Precio:</span><span>$${servicio.tarifa.toLocaleString("es-CO")}</span></div>
-                ${servicio.calificacionConductor ? `<div class="detail-row"><i class="fas fa-star"></i><span>Tu calificación:</span><span>${servicio.calificacionConductor.toFixed(1)}</span></div>` : ''}
-                ${servicio.comentariosConductor ? `<div class="detail-row"><i class="fas fa-comment"></i><span>Tu comentario:</span><span>${servicio.comentariosConductor}</span></div>` : ''}
-            `;
-            document.getElementById('modalDetallesViaje').classList.add('active');
-        })
-        .catch(error => {
-            console.error('Error al cargar detalles:', error);
-            showError("Error al cargar detalles del viaje");
-        });
-}
-
-// Función para cerrar el modal
-function cerrarModalDetalles() {
-    document.getElementById('modalDetallesViaje').classList.remove('active');
-}
-
-// Inicialización cuando se carga la sección de historial
-document.addEventListener('DOMContentLoaded', function() {
-    // ... otros listeners ...
-
-    // Cuando se muestra la sección de historial
-    document.querySelectorAll('.sidebar ul li[data-section="historial"]').forEach(item => {
-        item.addEventListener('click', () => {
-            cargarHistorialPasajero();
-        });
+  fetch(`/pasajero/servicios/${servicioId}`)
+    .then(response => response.json())
+    .then(servicio => {
+      document.getElementById('detallesViajeContent').innerHTML = `
+        <div class="detail-row"><i class="fas fa-calendar"></i><span>Fecha:</span><span>${new Date(servicio.fechaHora).toLocaleDateString()}</span></div>
+        <div class="detail-row"><i class="fas fa-clock"></i><span>Hora:</span><span>${new Date(servicio.fechaHora).toLocaleTimeString()}</span></div>
+        <div class="detail-row"><i class="fas fa-map-marker-alt"></i><span>Origen:</span><span>${servicio.origen}</span></div>
+        <div class="detail-row"><i class="fas fa-flag-checkered"></i><span>Destino:</span><span>${servicio.destino}</span></div>
+        <div class="detail-row"><i class="fas fa-money-bill-wave"></i><span>Precio:</span><span>$${servicio.tarifa.toLocaleString('es-CO')}</span></div>
+        ${servicio.calificacionConductor ? `<div class="detail-row"><i class="fas fa-star"></i><span>Tu calificación:</span><span>${servicio.calificacionConductor.toFixed(1)}</span></div>` : ''}
+        ${servicio.comentariosConductor ? `<div class="detail-row"><i class="fas fa-comment"></i><span>Tu comentario:</span><span>${servicio.comentariosConductor}</span></div>` : ''}`;
+      document.getElementById('modalDetallesViaje').classList.add('active');
+    })
+    .catch(error => {
+      console.error('Error al cargar detalles:', error);
+      showError('Error al cargar detalles del viaje');
     });
+}
 
-    // O si usas la función showSection
-    window.showSection = function(id) {
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
+function cerrarModalDetalles() {
+  document.getElementById('modalDetallesViaje').classList.remove('active');
+}
 
-        if (id === 'historial') {
-            cargarHistorialPasajero();
-        }
-    };
+/* =============================================
+ * DOMContentLoaded
+ * ============================================= */
+document.addEventListener('DOMContentLoaded', function() {
+  window.showSection = function(id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (id === 'historial') cargarHistorialPasajero();
+    if (id === 'viaje' && !map) initMap();
+  };
 });
 
 document.addEventListener('DOMContentLoaded', () => {
   checkDarkMode();
   loadProfileData();
   connectWebSocket();
+  initMap();
 
   const precioInput = document.getElementById('precioInput');
-  precioInput.removeAttribute('readonly');
+  if (precioInput) precioInput.removeAttribute('readonly');
 
   document.querySelector('.toggle-btn').addEventListener('click', () => {
     const sidebar = document.querySelector('.sidebar');
-    const main = document.querySelector('.main');
-    const icon = document.querySelector('.toggle-btn i');
+    const main    = document.querySelector('.main');
+    const icon    = document.querySelector('.toggle-btn i');
     sidebar.classList.toggle('collapsed');
     main.classList.toggle('collapsed');
     icon.classList.toggle('fa-angle-double-left');
@@ -1030,26 +804,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const motoModal = document.getElementById('motoModal');
 
   requestBtn.addEventListener('click', () => {
-    const origen = document.getElementById('origen').value;
+    const origen  = document.getElementById('origen').value;
     const destino = document.getElementById('destino').value;
-    const precioInput = document.getElementById('precioInput').value.replace(/\D/g, '') || estimatedPrice;
+    const precioVal = document.getElementById('precioInput').value.replace(/\D/g, '') || estimatedPrice;
     const metodoPago = document.querySelector('.option-card.selected span').textContent;
 
+    if (!originLatLng || !destinationLatLng) {
+      showError('Primero calcula una ruta.'); return;
+    }
+
     const solicitud = {
-      origen: origen,
-      destino: destino,
-      ubicacionOrigen: {
-        latitud: originMarker.getPosition().lat(),
-        longitud: originMarker.getPosition().lng()
-      },
-      ubicacionDestino: {
-        latitud: destinationMarker.getPosition().lat(),
-        longitud: destinationMarker.getPosition().lng()
-      },
-      distanciaKM: calculatedDistanceKm,
-      tarifa: parseFloat(precioInput),
-      fechaHora: new Date().toISOString(),
-      metodoPago: metodoPago
+      origen,
+      destino,
+      ubicacionOrigen:  { latitud: originLatLng.lat,      longitud: originLatLng.lng },
+      ubicacionDestino: { latitud: destinationLatLng.lat, longitud: destinationLatLng.lng },
+      distanciaKM:   calculatedDistanceKm,
+      tarifa:        parseFloat(precioVal),
+      fechaHora:     new Date().toISOString(),
+      metodoPago
     };
 
     fetch('/pasajero/solicitar-viaje', {
@@ -1061,9 +833,7 @@ document.addEventListener('DOMContentLoaded', () => {
       body: JSON.stringify(solicitud)
     })
     .then(response => {
-      if (!response.ok) {
-        return response.json().then(err => { throw err; });
-      }
+      if (!response.ok) return response.json().then(err => { throw err; });
       return response.json();
     })
     .then(data => {
@@ -1077,21 +847,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  if (closeModalBtn) {
-    closeModalBtn.addEventListener('click', () => {
-      hideMotoModal();
-    });
-  }
+  if (closeModalBtn) closeModalBtn.addEventListener('click', () => hideMotoModal());
 
   if (motoModal) {
     window.addEventListener('click', (event) => {
-      if (event.target === motoModal) {
-        hideMotoModal();
-      }
+      if (event.target === motoModal) hideMotoModal();
     });
   }
 
-  /* Selección de método de pago */
   document.querySelectorAll('.option-card').forEach(card => {
     card.addEventListener('click', function() {
       document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
@@ -1100,112 +863,63 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-/* =================================== */
-/* ===== LÓGICA MODAL CONFIRMACIÓN ===== */
-/* =================================== */
-
-const confirmModal = document.getElementById('confirm-modal');
-const confirmBtnYes = document.getElementById('confirm-modal-btn-yes');
-const confirmTitle = document.getElementById('confirm-modal-title');
+/* =============================================
+ * MODAL CONFIRMACIÓN GENÉRICO
+ * ============================================= */
+const confirmModal   = document.getElementById('confirm-modal');
+const confirmBtnYes  = document.getElementById('confirm-modal-btn-yes');
+const confirmTitle   = document.getElementById('confirm-modal-title');
 const confirmMessage = document.getElementById('confirm-modal-message');
 
-/**
- * Abre el modal de confirmación genérico.
- * @param {string} title - El título para el modal.
- * @param {string} message - El mensaje de pregunta.
- * @param {string} actionId - Un ID para saber qué acción ejecutar (ej: 'logout', 'deleteUser')
- */
 function openConfirmModal(title, message, actionId) {
-    if (!confirmModal || !confirmBtnYes || !confirmTitle || !confirmMessage) {
-        console.error("Elementos del modal de confirmación no encontrados");
-        return;
-    }
-
-    // 1. Poblar el modal con el texto
-    confirmTitle.textContent = title;
-    confirmMessage.textContent = message;
-
-    // 2. Guardar la acción a ejecutar en el botón de confirmación
-    // Usamos data-attributes, una práctica estándar y limpia.
-    confirmBtnYes.dataset.actionId = actionId;
-
-    // 3. Mostrar el modal
-    confirmModal.style.display = 'flex';
-    document.body.style.overflow = "hidden"; // Evita scroll de fondo
+  if (!confirmModal || !confirmBtnYes || !confirmTitle || !confirmMessage) {
+    console.error('Elementos del modal de confirmación no encontrados'); return;
+  }
+  confirmTitle.textContent   = title;
+  confirmMessage.textContent = message;
+  confirmBtnYes.dataset.actionId = actionId;
+  confirmModal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
 }
 
-/**
- * Cierra el modal de confirmación.
- */
 function closeConfirmModal() {
-    if (!confirmModal) return;
-    confirmModal.style.display = 'none';
-    document.body.style.overflow = "auto"; // Restaura scroll
+  if (!confirmModal) return;
+  confirmModal.style.display = 'none';
+  document.body.style.overflow = 'auto';
 }
 
-/**
- * Ejecuta la acción guardada en el botón 'Confirmar'.
- */
 function executeConfirmAction() {
-    const actionId = confirmBtnYes.dataset.actionId;
-
-    // Aquí es donde la "reutilización" brilla.
-    // Puedes añadir más 'case' para otras acciones.
-    switch (actionId) {
-        case 'logout':
-            // Busca el formulario de logout y lo envía.
-            const logoutForm = document.getElementById('logout-form');
-            if (logoutForm) {
-                logoutForm.submit();
-            } else {
-                console.error("El formulario 'logout-form' no se encontró.");
-            }
-            break;
-
-        case 'delete-user':
-            // EJEMPLO FUTURO:
-            // console.log("Lógica para borrar usuario...");
-            break;
-
-        case 'approve-all':
-            // EJEMPLO FUTURO:
-            // console.log("Lógica para aprobar todo...");
-            break;
-
-        default:
-            console.warn("Acción de confirmación desconocida:", actionId);
-    }
-
-    // Cierra el modal después de ejecutar la acción
-    closeConfirmModal();
+  const actionId = confirmBtnYes.dataset.actionId;
+  switch (actionId) {
+    case 'logout':
+      const logoutForm = document.getElementById('logout-form');
+      if (logoutForm) logoutForm.submit();
+      else console.error("El formulario 'logout-form' no se encontró.");
+      break;
+    default:
+      console.warn('Acción de confirmación desconocida:', actionId);
+  }
+  closeConfirmModal();
 }
 
-// --- Event Listeners Globales ---
-// 1. Asignar el clic al botón de confirmación
-if (confirmBtnYes) {
-    confirmBtnYes.addEventListener('click', executeConfirmAction);
-}
+if (confirmBtnYes) confirmBtnYes.addEventListener('click', executeConfirmAction);
 
-// 2. (Opcional) Cerrar modal si se hace clic fuera del contenido
 if (confirmModal) {
-    confirmModal.addEventListener('click', (e) => {
-        // Si el clic fue en el overlay (fondo) y no en el contenido
-        if (e.target === confirmModal) {
-            closeConfirmModal();
-        }
-    });
+  confirmModal.addEventListener('click', (e) => {
+    if (e.target === confirmModal) closeConfirmModal();
+  });
 }
 
-// Asignar funciones al objeto 'window' para que los 'onclick' del HTML funcionen
-window.openConfirmModal = openConfirmModal;
-window.closeConfirmModal = closeConfirmModal;
-/* Asegurar que las funciones estén en el ámbito global */
-window.initMap = initMap;
-window.showSection = showSection;
-window.resetPerfil = resetPerfil;
-window.calcularRuta = calcularRuta;
-window.limpiarRuta = limpiarRuta;
-window.centrarMapa = centrarMapa;
-window.alternarTrafico = alternarTrafico;
-window.toggleDarkMode = toggleDarkMode;
-window.guardarCambios = guardarCambios;
+/* Exponer al scope global para los onclick del HTML */
+window.openConfirmModal   = openConfirmModal;
+window.closeConfirmModal  = closeConfirmModal;
+window.initMap            = initMap;
+window.showSection        = showSection;
+window.resetPerfil        = resetPerfil;
+window.calcularRuta       = calcularRuta;
+window.limpiarRuta        = limpiarRuta;
+window.centrarMapa        = centrarMapa;
+window.alternarTrafico    = alternarTrafico;
+window.toggleDarkMode     = toggleDarkMode;
+window.guardarCambios     = guardarCambios;
+window.showSolicitudDetails = function() {}; // placeholder
