@@ -1,17 +1,39 @@
 /* =============================================
- * MAPA — Leaflet.js + CartoDB + OSRM + Photon
+ * MAPA — Leaflet.js (Pasajero) - VERSION 2.0.0
  * ============================================= */
+console.log('%c --- NEXA Dashboard_P V2.0.0 CARGADO --- ', 'background: #00c4ff; color: #000; font-weight: bold;');
 
-// Tile layer URLs (CartoDB — modo claro y oscuro)
-const TILE_LIGHT = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-const TILE_DARK  = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-const TILE_ATTR  = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>';
+// Tile layer URLs
+const TILE_LIGHT = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const TILE_DARK = 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png';
+const TILE_ATTR_LIGHT = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+const TILE_ATTR_DARK = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://stadiamaps.com/">Stadia Maps</a>';
+const TILE_ATTR = TILE_ATTR_LIGHT;
 
 /* ---- UI helpers ---- */
 
+/* showSection — gestiona la navegación y la inicialización del mapa */
 function showSection(id) {
+  console.log(`[NAV] Cambiando a sección: ${id}`);
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+  const section = document.getElementById(id);
+  if (section) section.classList.add('active');
+
+  if (id === 'historial') cargarHistorialPasajero();
+
+  if (id === 'viaje') {
+    console.log('[NAV] Detectada sección VIAJE, preparando mapa...');
+    // Esperar a que display:block se aplique antes de que Leaflet mida el contenedor
+    requestAnimationFrame(() => {
+      if (!map) {
+        console.log('[NAV] Mapa no existe, llamando a initMap()...');
+        initMap();
+      } else {
+        console.log('[NAV] Mapa ya existe, invalidando tamaño...');
+        setTimeout(() => map.invalidateSize(), 50);
+      }
+    });
+  }
 }
 
 function toggleDarkMode() {
@@ -20,9 +42,13 @@ function toggleDarkMode() {
   document.getElementById('darkModeText').textContent = isDark ? 'Modo claro' : 'Modo oscuro';
   if (currentTileLayer && map) {
     map.removeLayer(currentTileLayer);
-    currentTileLayer = L.tileLayer(isDark ? TILE_DARK : TILE_LIGHT, {
-      attribution: TILE_ATTR, maxZoom: 19
-    }).addTo(map);
+    currentTileLayer = L.tileLayer(
+      isDark ? TILE_DARK : TILE_LIGHT,
+      { attribution: isDark ? TILE_ATTR_DARK : TILE_ATTR_LIGHT, maxZoom: 19, crossOrigin: true }
+    ).addTo(map);
+    currentTileLayer.on('tileerror', (e) => {
+      console.warn('Tile error:', e.tile.src);
+    });
   }
 }
 
@@ -47,7 +73,7 @@ function guardarCambios() {
 
   if (profilePicInput.files && profilePicInput.files[0]) {
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
       const imageData = e.target.result;
       profilePicDisplay.src = imageData;
       localStorage.setItem('profilePic', imageData);
@@ -95,7 +121,7 @@ function segundosATexto(segundos) {
   const totalMin = Math.round(segundos / 60);
   if (totalMin < 60) return `${totalMin} min`;
   const horas = Math.floor(totalMin / 60);
-  const mins  = totalMin % 60;
+  const mins = totalMin % 60;
   return mins > 0 ? `${horas} h ${mins} min` : `${horas} h`;
 }
 
@@ -104,9 +130,9 @@ function reverseGeocode(lat, lng, callback) {
   fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`, {
     headers: { 'Accept-Language': 'es', 'User-Agent': 'NEXA-App/1.0' }
   })
-  .then(r => r.json())
-  .then(data => callback(data.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`))
-  .catch(() => callback(`${lat.toFixed(5)}, ${lng.toFixed(5)}`));
+    .then(r => r.json())
+    .then(data => callback(data.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`))
+    .catch(() => callback(`${lat.toFixed(5)}, ${lng.toFixed(5)}`));
 }
 
 /* ---- Autocomplete con Photon (Komoot) ---- */
@@ -114,72 +140,112 @@ let photonDebounceOrigen = null;
 let photonDebounceDestino = null;
 
 function setupPhotonAutocomplete(inputId, onSelect) {
+  console.log(`Buscando input '${inputId}' para autocomplete...`);
   const input = document.getElementById(inputId);
-  if (!input) return;
+  if (!input) {
+    console.error(`ERROR: No se encontró el input con id '${inputId}'`);
+    return;
+  }
+  console.log(`Autocomplete vinculado correctamente a #${inputId}`);
 
   const debounceRef = inputId === 'origen' ? 'photonDebounceOrigen' : 'photonDebounceDestino';
 
-  // Contenedor relativo para el dropdown
-  const wrapper = input.parentNode;
-  wrapper.style.position = 'relative';
+  // El input-group ya tiene position:relative en el CSS
+  // Ponemos el dropdown directamente dentro del input-group (parentNode del input)
+  const inputGroup = input.parentNode;
 
   const dropdown = document.createElement('ul');
   dropdown.id = `photon-dropdown-${inputId}`;
-  dropdown.style.cssText = `
-    position: absolute; top: 100%; left: 0; right: 0; z-index: 9999;
-    background: #fff; border: 1px solid #ccc; border-radius: 6px;
-    list-style: none; margin: 2px 0 0; padding: 0; max-height: 220px;
-    overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,.15); display: none;
-  `;
-  wrapper.appendChild(dropdown);
+  // Estilos del dropdown (oscuro premium)
+  dropdown.style.cssText = [
+    'position:absolute', 'top:100%', 'left:0', 'right:0', 'z-index:10000',
+    'background:#1e293b', 'border:1px solid #00c4ff', 'border-radius:8px',
+    'list-style:none', 'margin:4px 0 0', 'padding:5px 0', 'max-height:250px',
+    'overflow-y:auto', 'box-shadow:0 10px 15px -3px rgba(0,0,0,0.5)', 'display:none',
+    'color: white !important'
+  ].join(';');
 
-  // Restricción a Cartagena, Colombia
+  // Para evitar problemas de overflow en el padre, nos aseguramos que el inputGroup sea relative
+  inputGroup.style.position = 'relative';
+  inputGroup.appendChild(dropdown);
+
   const LAT_MIN = 10.25, LAT_MAX = 10.55, LON_MIN = -75.75, LON_MAX = -75.35;
 
   input.addEventListener('input', () => {
+    const q = input.value.trim();
+    console.log(`Input detectado en #${inputId}: "${q}"`);
+
     if (inputId === 'origen') clearTimeout(photonDebounceOrigen);
     else clearTimeout(photonDebounceDestino);
 
-    const q = input.value.trim();
-    if (q.length < 3) { dropdown.style.display = 'none'; return; }
+    if (q.length < 3) {
+      console.log(`Consulta muy corta (<3): "${q}"`);
+      dropdown.style.display = 'none';
+      return;
+    }
 
     const timer = setTimeout(() => {
-      fetch(
-        `https://photon.komoot.io/api/?q=${encodeURIComponent(q + ' Cartagena Colombia')}&limit=6&lang=es&lat=10.4055&lon=-75.5037`
-      )
-      .then(r => r.json())
-      .then(data => {
-        dropdown.innerHTML = '';
-        const features = (data.features || []).filter(f => {
-          const [lon, lat] = f.geometry.coordinates;
-          return lat >= LAT_MIN && lat <= LAT_MAX && lon >= LON_MIN && lon <= LON_MAX;
-        });
+      // lang=es causaba Error 400 en la instancia pública. Lo eliminamos para que funcione.
+      const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=10.4055&lon=-75.5037&limit=10`;
 
-        if (features.length === 0) { dropdown.style.display = 'none'; return; }
+      console.log(`[PHOTON] Solicitando: ${url}`);
 
-        features.forEach(f => {
-          const props = f.properties;
-          const label = [props.name, props.street, props.city, props.country]
-            .filter(Boolean).join(', ');
-          const [lon, lat] = f.geometry.coordinates;
+      fetch(url)
+        .then(r => {
+          if (!r.ok) throw new Error(`HTTP status ${r.status}`);
+          return r.json();
+        })
+        .then(data => {
+          dropdown.innerHTML = '';
+          const features = data.features || [];
+          console.log(`[PHOTON] Resultados para #${inputId}: ${features.length}`);
 
-          const li = document.createElement('li');
-          li.textContent = label;
-          li.style.cssText = 'padding: 9px 12px; cursor: pointer; font-size: 0.83rem; border-bottom: 1px solid #eee;';
-          li.addEventListener('mouseenter', () => li.style.background = '#f0f4ff');
-          li.addEventListener('mouseleave', () => li.style.background = '');
-          li.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            input.value = label;
+          if (features.length === 0) {
+            console.warn(`[PHOTON] Sin resultados para "${q}"`);
             dropdown.style.display = 'none';
-            onSelect({ lat, lng: lon, label });
+            return;
+          }
+
+          // Filtrado manual por coordenadas (opcional, pero más seguro que el bbox de la API)
+          const filtered = features.filter(f => {
+            const [lon, lat] = f.geometry.coordinates;
+            return lat >= LAT_MIN && lat <= LAT_MAX && lon >= LON_MIN && lon <= LON_MAX;
           });
-          dropdown.appendChild(li);
+
+          if (filtered.length === 0) {
+            console.log(`[PHOTON] ${features.length} resultados encontrados pero fuera de Cartagena.`);
+            dropdown.style.display = 'none';
+            return;
+          }
+
+          filtered.forEach(f => {
+            const props = f.properties;
+            const parts = [props.name, props.street, props.city].filter(Boolean);
+            const label = parts.join(', ');
+            const [lon, lat] = f.geometry.coordinates;
+
+            const li = document.createElement('li');
+            li.textContent = label;
+            li.style.cssText = 'padding: 10px 15px; cursor: pointer; font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.1); color: white !important;';
+
+            li.addEventListener('mouseenter', () => li.style.background = 'rgba(0, 196, 255, 0.2)');
+            li.addEventListener('mouseleave', () => li.style.background = '');
+            li.addEventListener('mousedown', (e) => {
+              e.preventDefault();
+              console.log(`Seleccionado en #${inputId}: ${label} @ ${lat},${lon}`);
+              input.value = label;
+              dropdown.style.display = 'none';
+              onSelect({ lat, lng: lon, label });
+            });
+            dropdown.appendChild(li);
+          });
+          dropdown.style.display = 'block';
+        })
+        .catch(err => {
+          console.error(`Error crítico en Photon para #${inputId}:`, err);
+          dropdown.style.display = 'none';
         });
-        dropdown.style.display = 'block';
-      })
-      .catch(() => { dropdown.style.display = 'none'; });
-    }, 400);
+    }, 450);
 
     if (inputId === 'origen') photonDebounceOrigen = timer;
     else photonDebounceDestino = timer;
@@ -192,6 +258,13 @@ function setupPhotonAutocomplete(inputId, onSelect) {
 
 /* ---- initMap: Leaflet ---- */
 function initMap() {
+  console.log('[MAP] Ejecutando initMap()...');
+  if (map) {
+    // Ya inicializado — solo forzar recálculo de tamaño por si el contenedor estaba oculto
+    setTimeout(() => map.invalidateSize(), 50);
+    return;
+  }
+
   const centro = [10.4055, -75.5037];
   const isDarkMode = document.body.classList.contains('dark-mode');
 
@@ -207,18 +280,29 @@ function initMap() {
     zoomControl: true
   });
 
-  currentTileLayer = L.tileLayer(isDarkMode ? TILE_DARK : TILE_LIGHT, {
-    attribution: TILE_ATTR,
-    maxZoom: 19
-  }).addTo(map);
+  currentTileLayer = L.tileLayer(
+    isDarkMode ? TILE_DARK : TILE_LIGHT,
+    {
+      attribution: isDarkMode ? TILE_ATTR_DARK : TILE_ATTR_LIGHT,
+      maxZoom: 19,
+      crossOrigin: true
+    }
+  ).addTo(map);
 
-  // Quitar spinner cuando carguen los tiles
-  map.once('layeradd', () => {
-    setTimeout(() => {
-      loadingOverlay.classList.add('hidden');
-      setTimeout(() => loadingOverlay.remove(), 500);
-    }, 600);
+  // Log errores de tiles para diagnosticar
+  currentTileLayer.on('tileerror', (e) => {
+    console.warn('Tile error:', e.tile.src);
   });
+  currentTileLayer.on('tileload', () => {
+    // Al primer tile cargado, quitar spinner
+    if (loadingOverlay && loadingOverlay.parentNode) {
+      loadingOverlay.classList.add('hidden');
+      setTimeout(() => { try { loadingOverlay.remove(); } catch (e2) { } }, 500);
+    }
+  });
+
+  // Forzar recálculo de tamaño (el contenedor puede haber estado oculto)
+  setTimeout(() => map.invalidateSize(), 100);
 
   // Marcador inicial (arrastrable)
   const defaultIcon = L.divIcon({
@@ -233,7 +317,7 @@ function initMap() {
 
   marcadorLeaflet = L.marker(centro, { draggable: true, icon: defaultIcon }).addTo(map);
 
-  marcadorLeaflet.on('dragend', function() {
+  marcadorLeaflet.on('dragend', function () {
     const { lat, lng } = marcadorLeaflet.getLatLng();
     originLatLng = { lat, lng };
     reverseGeocode(lat, lng, (address) => {
@@ -260,11 +344,11 @@ function animateMarker(marker) {
 
 /* ---- Limpiar ruta ---- */
 function limpiarRuta() {
-  if (routePolyline)      { map.removeLayer(routePolyline);      routePolyline = null; }
-  if (originLeaflet)      { map.removeLayer(originLeaflet);      originLeaflet = null; }
+  if (routePolyline) { map.removeLayer(routePolyline); routePolyline = null; }
+  if (originLeaflet) { map.removeLayer(originLeaflet); originLeaflet = null; }
   if (destinationLeaflet) { map.removeLayer(destinationLeaflet); destinationLeaflet = null; }
 
-  document.getElementById('origen').value  = '';
+  document.getElementById('origen').value = '';
   document.getElementById('destino').value = '';
   document.getElementById('detalle-precio').innerHTML = `
     <div class="empty-state">
@@ -308,7 +392,7 @@ function alternarTrafico() {
 
 /* ---- Calcular ruta con OSRM ---- */
 function calcularRuta() {
-  const origenText  = document.getElementById('origen').value.trim();
+  const origenText = document.getElementById('origen').value.trim();
   const destinoText = document.getElementById('destino').value.trim();
 
   if (!origenText || !destinoText) {
@@ -355,8 +439,8 @@ function calcularRuta() {
       estimatedPrice = 1000 + distanciaKm * 800;
 
       // Limpiar capas previas
-      if (routePolyline)      { map.removeLayer(routePolyline);      routePolyline = null; }
-      if (originLeaflet)      { map.removeLayer(originLeaflet);      originLeaflet = null; }
+      if (routePolyline) { map.removeLayer(routePolyline); routePolyline = null; }
+      if (originLeaflet) { map.removeLayer(originLeaflet); originLeaflet = null; }
       if (destinationLeaflet) { map.removeLayer(destinationLeaflet); destinationLeaflet = null; }
 
       // Polilínea de ruta
@@ -383,7 +467,7 @@ function calcularRuta() {
         iconSize: [28, 28], iconAnchor: [14, 28]
       });
 
-      originLeaflet      = L.marker([oLat, oLng], { icon: mkOrigenIcon  }).addTo(map).bindTooltip('Origen');
+      originLeaflet = L.marker([oLat, oLng], { icon: mkOrigenIcon }).addTo(map).bindTooltip('Origen');
       destinationLeaflet = L.marker([dLat, dLng], { icon: mkDestinoIcon }).addTo(map).bindTooltip('Destino');
 
       // Instrucciones de ruta (steps OSRM)
@@ -518,9 +602,9 @@ function hideMotoModal() {
       const modalMessage = document.getElementById('modalMessage');
       const driverInfo = document.getElementById('driverInfo');
       const progressContainer = document.getElementById('progressContainer');
-      if (modalMessage)        modalMessage.style.display = 'block';
-      if (driverInfo)          driverInfo.style.display = 'none';
-      if (progressContainer)   progressContainer.style.display = 'none';
+      if (modalMessage) modalMessage.style.display = 'block';
+      if (driverInfo) driverInfo.style.display = 'none';
+      if (progressContainer) progressContainer.style.display = 'none';
     }, 200);
   }
 }
@@ -532,15 +616,15 @@ function cancelRide() {
     method: 'POST',
     headers: { 'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value }
   })
-  .then(response => {
-    if (!response.ok) throw new Error('Error al cancelar el viaje');
-    hideMotoModal();
-    showError('Viaje cancelado correctamente');
-  })
-  .catch(error => {
-    console.error('Error al cancelar viaje:', error);
-    showError(error.message || 'Error al cancelar el viaje');
-  });
+    .then(response => {
+      if (!response.ok) throw new Error('Error al cancelar el viaje');
+      hideMotoModal();
+      showError('Viaje cancelado correctamente');
+    })
+    .catch(error => {
+      console.error('Error al cancelar viaje:', error);
+      showError(error.message || 'Error al cancelar el viaje');
+    });
 }
 
 /* =============================================
@@ -570,14 +654,14 @@ function connectWebSocket() {
 }
 
 function startWebSocket(userId) {
-  stompClient.connect({}, function(frame) {
+  stompClient.connect({}, function (frame) {
     console.log('Pasajero conectado al WebSocket: ' + frame);
-    stompClient.subscribe(`/topic/pasajero/${userId}`, function(message) {
+    stompClient.subscribe(`/topic/pasajero/${userId}`, function (message) {
       const servicio = JSON.parse(message.body);
       console.log('Pasajero recibió actualización:', servicio);
       handleServicioUpdate(servicio);
     });
-  }, function(error) {
+  }, function (error) {
     console.error('Error en WebSocket del pasajero:', error);
     showError('Error de conexión. Reintentando...');
     setTimeout(() => connectWebSocket(), 5000);
@@ -589,7 +673,7 @@ function handleServicioUpdate(servicio) {
   currentServicioId = servicio.id;
 
   const driverPhoto = servicio.conductor?.fotoUrl || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
-  const driverName  = servicio.conductor?.nombre || 'Conductor asignado';
+  const driverName = servicio.conductor?.nombre || 'Conductor asignado';
 
   switch (servicio.estado) {
     case 'ACEPTADO':
@@ -651,18 +735,18 @@ function cancelarViaje(servicioId) {
     method: 'POST',
     headers: { 'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value }
   })
-  .then(response => {
-    if (!response.ok) throw new Error('Error al cancelar');
-    hideMotoModal();
-    showError('Viaje cancelado correctamente');
-  })
-  .catch(error => showError(error.message || 'Error al cancelar el viaje'));
+    .then(response => {
+      if (!response.ok) throw new Error('Error al cancelar');
+      hideMotoModal();
+      showError('Viaje cancelado correctamente');
+    })
+    .catch(error => showError(error.message || 'Error al cancelar el viaje'));
 }
 
 function subscribeToPasajeroTopic() {
   const userId = localStorage.getItem('userId');
   if (userId && stompClient) {
-    stompClient.subscribe('/topic/pasajero/' + userId, function(message) {
+    stompClient.subscribe('/topic/pasajero/' + userId, function (message) {
       const servicio = JSON.parse(message.body);
       handleServicioUpdate(servicio);
     });
@@ -694,7 +778,7 @@ function renderizarHistorialPasajero(filteredData = historialDataPasajero) {
   tbody.innerHTML = '';
 
   const start = (currentPagePasajero - 1) * itemsPerPagePasajero;
-  const end   = start + itemsPerPagePasajero;
+  const end = start + itemsPerPagePasajero;
   const paginatedData = filteredData.slice(start, end);
 
   paginatedData.forEach(viaje => {
@@ -771,28 +855,23 @@ function cerrarModalDetalles() {
 /* =============================================
  * DOMContentLoaded
  * ============================================= */
-document.addEventListener('DOMContentLoaded', function() {
-  window.showSection = function(id) {
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    if (id === 'historial') cargarHistorialPasajero();
-    if (id === 'viaje' && !map) initMap();
-  };
-});
+/* showSection ya está definida globalmente arriba */
+
 
 document.addEventListener('DOMContentLoaded', () => {
   checkDarkMode();
   loadProfileData();
   connectWebSocket();
-  initMap();
+  // NO llamar initMap() aquí: el contenedor #viaje está oculto (display:none)
+  // initMap se llama en showSection('viaje') via requestAnimationFrame
 
   const precioInput = document.getElementById('precioInput');
   if (precioInput) precioInput.removeAttribute('readonly');
 
   document.querySelector('.toggle-btn').addEventListener('click', () => {
     const sidebar = document.querySelector('.sidebar');
-    const main    = document.querySelector('.main');
-    const icon    = document.querySelector('.toggle-btn i');
+    const main = document.querySelector('.main');
+    const icon = document.querySelector('.toggle-btn i');
     sidebar.classList.toggle('collapsed');
     main.classList.toggle('collapsed');
     icon.classList.toggle('fa-angle-double-left');
@@ -804,7 +883,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const motoModal = document.getElementById('motoModal');
 
   requestBtn.addEventListener('click', () => {
-    const origen  = document.getElementById('origen').value;
+    const origen = document.getElementById('origen').value;
     const destino = document.getElementById('destino').value;
     const precioVal = document.getElementById('precioInput').value.replace(/\D/g, '') || estimatedPrice;
     const metodoPago = document.querySelector('.option-card.selected span').textContent;
@@ -816,11 +895,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const solicitud = {
       origen,
       destino,
-      ubicacionOrigen:  { latitud: originLatLng.lat,      longitud: originLatLng.lng },
+      ubicacionOrigen: { latitud: originLatLng.lat, longitud: originLatLng.lng },
       ubicacionDestino: { latitud: destinationLatLng.lat, longitud: destinationLatLng.lng },
-      distanciaKM:   calculatedDistanceKm,
-      tarifa:        parseFloat(precioVal),
-      fechaHora:     new Date().toISOString(),
+      distanciaKM: calculatedDistanceKm,
+      tarifa: parseFloat(precioVal),
+      fechaHora: new Date().toISOString(),
       metodoPago
     };
 
@@ -832,19 +911,19 @@ document.addEventListener('DOMContentLoaded', () => {
       },
       body: JSON.stringify(solicitud)
     })
-    .then(response => {
-      if (!response.ok) return response.json().then(err => { throw err; });
-      return response.json();
-    })
-    .then(data => {
-      currentServicioId = data.servicioId;
-      showMotoModal('Buscando conductor...', 'Por favor espera mientras encontramos un conductor para ti');
-      subscribeToPasajeroTopic();
-    })
-    .catch(error => {
-      console.error('Error al solicitar viaje:', error);
-      showError(error.message || 'Error al solicitar el viaje');
-    });
+      .then(response => {
+        if (!response.ok) return response.json().then(err => { throw err; });
+        return response.json();
+      })
+      .then(data => {
+        currentServicioId = data.servicioId;
+        showMotoModal('Buscando conductor...', 'Por favor espera mientras encontramos un conductor para ti');
+        subscribeToPasajeroTopic();
+      })
+      .catch(error => {
+        console.error('Error al solicitar viaje:', error);
+        showError(error.message || 'Error al solicitar el viaje');
+      });
   });
 
   if (closeModalBtn) closeModalBtn.addEventListener('click', () => hideMotoModal());
@@ -856,7 +935,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   document.querySelectorAll('.option-card').forEach(card => {
-    card.addEventListener('click', function() {
+    card.addEventListener('click', function () {
       document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
       this.classList.add('selected');
     });
@@ -866,16 +945,16 @@ document.addEventListener('DOMContentLoaded', () => {
 /* =============================================
  * MODAL CONFIRMACIÓN GENÉRICO
  * ============================================= */
-const confirmModal   = document.getElementById('confirm-modal');
-const confirmBtnYes  = document.getElementById('confirm-modal-btn-yes');
-const confirmTitle   = document.getElementById('confirm-modal-title');
+const confirmModal = document.getElementById('confirm-modal');
+const confirmBtnYes = document.getElementById('confirm-modal-btn-yes');
+const confirmTitle = document.getElementById('confirm-modal-title');
 const confirmMessage = document.getElementById('confirm-modal-message');
 
 function openConfirmModal(title, message, actionId) {
   if (!confirmModal || !confirmBtnYes || !confirmTitle || !confirmMessage) {
     console.error('Elementos del modal de confirmación no encontrados'); return;
   }
-  confirmTitle.textContent   = title;
+  confirmTitle.textContent = title;
   confirmMessage.textContent = message;
   confirmBtnYes.dataset.actionId = actionId;
   confirmModal.style.display = 'flex';
@@ -911,15 +990,15 @@ if (confirmModal) {
 }
 
 /* Exponer al scope global para los onclick del HTML */
-window.openConfirmModal   = openConfirmModal;
-window.closeConfirmModal  = closeConfirmModal;
-window.initMap            = initMap;
-window.showSection        = showSection;
-window.resetPerfil        = resetPerfil;
-window.calcularRuta       = calcularRuta;
-window.limpiarRuta        = limpiarRuta;
-window.centrarMapa        = centrarMapa;
-window.alternarTrafico    = alternarTrafico;
-window.toggleDarkMode     = toggleDarkMode;
-window.guardarCambios     = guardarCambios;
-window.showSolicitudDetails = function() {}; // placeholder
+window.openConfirmModal = openConfirmModal;
+window.closeConfirmModal = closeConfirmModal;
+window.initMap = initMap;
+window.showSection = showSection;
+window.resetPerfil = resetPerfil;
+window.calcularRuta = calcularRuta;
+window.limpiarRuta = limpiarRuta;
+window.centrarMapa = centrarMapa;
+window.alternarTrafico = alternarTrafico;
+window.toggleDarkMode = toggleDarkMode;
+window.guardarCambios = guardarCambios;
+window.showSolicitudDetails = function () { }; // placeholder

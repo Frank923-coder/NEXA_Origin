@@ -49,11 +49,28 @@ public class AuthService {
         return usuarioGuardado;
     }
 
+    public Pasajero registrarPasajero(String nombreCompleto, String email,
+            String telefono, String password) {
+        if (usuarioRepository.findByEmailAndRol(email, Rol.PASAJERO).isPresent()) {
+            throw new IllegalStateException("Ya existe un pasajero registrado con este email: " + email);
+        }
 
+        Pasajero pasajero = Pasajero.builder()
+                .email(email)
+                .password(passwordEncoder.encode(password))
+                .rol(Rol.PASAJERO)
+                .estadoValidacion(EstadoValidacion.APROBADO)
+                .nombreCompleto(nombreCompleto)
+                .telefono(telefono)
+                .build();
 
+        Pasajero pasajeroGuardado = usuarioRepository.save(pasajero);
+        enviarNotificacionAdminSegura(pasajeroGuardado);
+        return pasajeroGuardado;
+    }
 
     public Conductor registrarConductor(String nombre, String email, String password,
-                                        int licencia, Long soat, Long tarjetaPropiedad) {
+            int licencia, Long soat, Long tarjetaPropiedad) {
         // Validación
         if (usuarioRepository.findByEmailAndRol(email, Rol.CONDUCTOR).isPresent()) {
             throw new IllegalStateException("Ya existe un conductor registrado con este email: " + email);
@@ -92,7 +109,6 @@ public class AuthService {
             logger.error("Error socket admin: {}", e.getMessage());
         }
     }
-
 
     public UserDetails autenticarUsuario(String email, String password) {
         try {

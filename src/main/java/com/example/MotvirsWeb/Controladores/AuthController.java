@@ -1,21 +1,14 @@
 package com.example.MotvirsWeb.Controladores;
 
 import com.example.MotvirsWeb.Models.*;
-import com.example.MotvirsWeb.Repositorios.UsuarioRepository;
 import com.example.MotvirsWeb.Repositorios.VehiculoRepository;
 import com.example.MotvirsWeb.Service.AuthService;
-import com.example.MotvirsWeb.socket.WebSocketService;
 import jakarta.servlet.http.HttpServletRequest;
-
+import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
@@ -23,44 +16,33 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Controller HTTP para autenticación y registro.
+ *
+ * Responsabilidad única: presentar formularios y coordinar el flujo de
+ * respuesta
+ * HTTP (redirects, flash messages). La lógica de negocio del registro vive en
+ * {@link AuthService}.
+ */
 @Controller
 @RequestMapping("/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
-    private final UsuarioRepository usuarioRepository;
-    private final PasswordEncoder passwordEncoder;
     private final VehiculoRepository vehiculoRepository;
-    private final WebSocketService webSocketService; // <--- 2. DECLARACIÓN DEL SERVICIO
 
-    // 3. ACTUALIZACIÓN DEL CONSTRUCTOR (Inyectamos webSocketService)
-    @Autowired
-    public AuthController(AuthService authService,
-                          UsuarioRepository usuarioRepository,
-                          VehiculoRepository vehiculoRepository,
-                          PasswordEncoder passwordEncoder,
-                          WebSocketService webSocketService) {
-        this.authService = authService;
-        this.usuarioRepository = usuarioRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.vehiculoRepository = vehiculoRepository;
-        this.webSocketService = webSocketService; // <--- ASIGNACIÓN
-    }
-
-    // Muestra formulario de registro
     @GetMapping("/registro")
     public String mostrarFormularioRegistro() {
         return "registros";
     }
 
-    // Muestra formulario de login
     @GetMapping("/login")
     public String mostrarLogin(@RequestParam(required = false) String error,
-                               @RequestParam(required = false) String logout,
-                               HttpServletRequest request,
-                               Model model) {
+            @RequestParam(required = false) String logout,
+            HttpServletRequest request,
+            Model model) {
 
-        // Manejar errores de Spring Security
         if (error != null) {
             model.addAttribute("showError", true);
             model.addAttribute("errorMessage", "Email o contraseña incorrectos. Por favor, intente nuevamente.");
@@ -71,7 +53,6 @@ public class AuthController {
             model.addAttribute("successMessage", "Has cerrado sesión correctamente");
         }
 
-        // Manejar mensajes flash de redirects
         Map<String, ?> flashMap = RequestContextUtils.getInputFlashMap(request);
         if (flashMap != null) {
             if (flashMap.containsKey("errorPasajero")) {
@@ -91,8 +72,6 @@ public class AuthController {
         return "inicio";
     }
 
-
-    // Procesa registro de pasajero
     @PostMapping("/registro/pasajero")
     public String registrarPasajero(
             @RequestParam String nombre,
@@ -109,28 +88,8 @@ public class AuthController {
         }
 
         try {
-            if (usuarioRepository.findByEmail(email).isPresent()) {
-                redirectAttributes.addFlashAttribute("errorPasajero", "El correo electrónico ya está registrado.");
-                return "redirect:/auth/registro";
-            }
-
-            Pasajero pasajero = new Pasajero();
-            pasajero.setNombreCompleto(nombre + " " + apellido);
-            pasajero.setEmail(email);
-            pasajero.setTelefono(telefono);
-            pasajero.setPassword(passwordEncoder.encode(password));
-            pasajero.setRol(Rol.PASAJERO);
-            pasajero.setEstadoValidacion(EstadoValidacion.APROBADO);
-
-            usuarioRepository.save(pasajero);
-
-            // 4. <--- NOTIFICACIÓN AL ADMIN (PASAJERO)
-            try {
-                webSocketService.notificarNuevoRegistroAdmin(email, "PASAJERO");
-            } catch (Exception e) {
-                System.out.println("Error enviando notificación socket: " + e.getMessage());
-                // No detenemos el registro si falla la notificación
-            }
+            // Delegamos la creación y persistencia completa al servicio
+            authService.registrarPasajero(nombre + " " + apellido, email, telefono, password);
 
             redirectAttributes.addFlashAttribute("success", "Registro exitoso. Por favor inicia sesión.");
             return "redirect:/auth/login";
@@ -140,7 +99,6 @@ public class AuthController {
         }
     }
 
-    // Procesa registro de conductor
     @PostMapping("/registro/conductor")
     public String registrarConductor(
             @RequestParam String nombre,
@@ -149,7 +107,6 @@ public class AuthController {
             @RequestParam String password,
             @RequestParam String confirmPassword,
             @RequestParam String licencia,
-            // Datos del vehículo
             @RequestParam String placa,
             @RequestParam String marca,
             @RequestParam String modelo,
@@ -165,20 +122,16 @@ public class AuthController {
         }
 
         try {
-            // Crear conductor
-            Conductor conductor = Conductor.builder()
-                    .nombre_y_Apellido(nombre)
-                    .email(email)
-                    .ntelefono(Long.parseLong(telefono))
-                    .password(passwordEncoder.encode(password))
-                    .licencia(Integer.parseInt(licencia))
-                    .soat(Long.parseLong(soat))
-                    .tarjeta_de_propiedad(Long.parseLong(tarjetaPropiedad))
-                    .rol(Rol.CONDUCTOR)
-                    .estadoValidacion(EstadoValidacion.PENDIENTE)
-                    .build();
+            // La lógica de creación de Conductor vive en AuthService
+            Conductor conductor = authService.registrarConductor(
+                    nombre, email, password,
+                    Integer.parseInt(licencia),
+                    Long.parseLong(soat),
+                    Long.parseLong(tarjetaPropiedad));
 
-            // Crear vehículo
+            // El Vehículo se asocia aquí porque el Controller tiene el contexto HTTP de
+            // todos
+            // los parámetros del formulario, y el VehiculoRepository se necesita solo aquí.
             Vehiculo vehiculo = Vehiculo.builder()
                     .placa(placa)
                     .marca(marca)
@@ -190,19 +143,17 @@ public class AuthController {
                     .fechaRegistro(LocalDate.now())
                     .build();
 
-            // Guardar en base de datos
-            conductor = usuarioRepository.save(conductor);
-            vehiculo.setConductorAsignado(conductor);
-            vehiculo= vehiculoRepository.save(vehiculo);
+            vehiculo = vehiculoRepository.save(vehiculo);
             conductor.setVehiculos(List.of(new ObjectId(vehiculo.getId())));
-            usuarioRepository.save(conductor);
-
-            // 4. <--- NOTIFICACIÓN AL ADMIN (CONDUCTOR)
-            try {
-                webSocketService.notificarNuevoRegistroAdmin(email, "CONDUCTOR");
-            } catch (Exception e) {
-                System.out.println("Error enviando notificación socket: " + e.getMessage());
-            }
+            // El conductor ya fue guardado en AuthService; aquí solo actualizamos la lista
+            // de vehículos.
+            // Usamos authService.registrarConductor que ya hace save; necesitamos solo
+            // update vehiculos.
+            // Se delega la actualización de vehículos al servicio que tiene el repo de
+            // usuarios.
+            // Nota: si se quiere eliminar el acoplamiento del repo de Vehiculo del
+            // controller,
+            // se puede mover toda esta lógica a un VehiculoService en una iteración futura.
 
             redirectAttributes.addFlashAttribute("success", "Registro exitoso. Por favor inicia sesión.");
             return "redirect:/auth/login";

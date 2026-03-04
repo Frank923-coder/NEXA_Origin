@@ -1,11 +1,13 @@
 /* =============================================
- * MAPA — Leaflet.js + CartoDB (Conductor)
+ * MAPA — Leaflet.js + OpenStreetMap (Conductor)
  * ============================================= */
 
-// Tile layer URLs (CartoDB)
-const TILE_LIGHT = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-const TILE_DARK = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>';
+// Tile layer URLs
+const TILE_LIGHT = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const TILE_DARK = 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png';
+const TILE_ATTR_LIGHT = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+const TILE_ATTR_DARK = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://stadiamaps.com/">Stadia Maps</a>';
+const TILE_ATTR = TILE_ATTR_LIGHT;
 
 // Icono SVG del pasajero (divIcon)
 const passengerSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 48 48">
@@ -33,9 +35,10 @@ function toggleDarkMode() {
     document.getElementById('darkModeText').textContent = isDark ? 'Modo claro' : 'Modo oscuro';
     if (currentTileLayer && map) {
         map.removeLayer(currentTileLayer);
-        currentTileLayer = L.tileLayer(isDark ? TILE_DARK : TILE_LIGHT, {
-            attribution: TILE_ATTR, maxZoom: 19
-        }).addTo(map);
+        currentTileLayer = L.tileLayer(
+            isDark ? TILE_DARK : TILE_LIGHT,
+            { attribution: isDark ? TILE_ATTR_DARK : TILE_ATTR_LIGHT, maxZoom: 19 }
+        ).addTo(map);
     }
 }
 
@@ -88,7 +91,11 @@ function resetPerfil() {
 function initMap() {
     const mapEl = document.getElementById('map');
     if (!mapEl) { console.error('Elemento #map no encontrado'); return; }
-    if (map) return; // ya inicializado
+    if (map) {
+        // Ya inicializado: solo forzar recálculo de tamaño
+        setTimeout(() => map.invalidateSize(), 50);
+        return;
+    }
 
     const centro = [10.4055, -75.5037];
     const isDarkMode = document.body.classList.contains('dark-mode');
@@ -102,16 +109,27 @@ function initMap() {
     try {
         map = L.map('map', { center: centro, zoom: 13, zoomControl: true });
 
-        currentTileLayer = L.tileLayer(isDarkMode ? TILE_DARK : TILE_LIGHT, {
-            attribution: TILE_ATTR, maxZoom: 19
-        }).addTo(map);
+        currentTileLayer = L.tileLayer(
+            isDarkMode ? TILE_DARK : TILE_LIGHT,
+            {
+                attribution: isDarkMode ? TILE_ATTR_DARK : TILE_ATTR_LIGHT,
+                maxZoom: 19,
+                crossOrigin: true
+            }
+        ).addTo(map);
 
-        map.once('layeradd', () => {
-            setTimeout(() => {
-                loadingOverlay.classList.add('hidden');
-                setTimeout(() => loadingOverlay.remove(), 500);
-            }, 600);
+        currentTileLayer.on('tileerror', (e) => {
+            console.warn('Tile error conductor:', e.tile.src);
         });
+        currentTileLayer.on('tileload', () => {
+            if (loadingOverlay && loadingOverlay.parentNode) {
+                loadingOverlay.classList.add('hidden');
+                setTimeout(() => { try { loadingOverlay.remove(); } catch (e2) { } }, 500);
+            }
+        });
+
+        // Forzar recálculo de tamaño (puede haber estado oculto)
+        setTimeout(() => map.invalidateSize(), 100);
 
         cargarServiciosDisponibles();
     } catch (error) {
@@ -134,6 +152,10 @@ function cargarServiciosDisponibles() {
             markers = [];
 
             servicios.forEach(servicio => {
+                const lat = servicio.ubicacionOrigen.latitud;
+                const lon = servicio.ubicacionOrigen.longitud;
+                const coords = [lat, lon];
+
                 const iconDiv = L.divIcon({
                     className: 'passenger-marker',
                     html: passengerSVG,
@@ -141,10 +163,7 @@ function cargarServiciosDisponibles() {
                     iconAnchor: [18, 18]
                 });
 
-                const marker = L.marker(
-                    [servicio.ubicacionOrigen.latitud, servicio.ubicacionOrigen.longitud],
-                    { icon: iconDiv, title: servicio.pasajero.nombre }
-                ).addTo(map);
+                const marker = L.marker(coords, { icon: iconDiv, title: servicio.pasajero.nombre }).addTo(map);
 
                 const popupContent = `
           <div class="info-window">
@@ -157,8 +176,16 @@ function cargarServiciosDisponibles() {
             </button>
           </div>`;
 
-                marker.bindPopup(popupContent, { maxWidth: 250 });
-                marker.on('click', () => marker.openPopup());
+                // Usamos setLatLng explícito para fijar el popup exactamente en las coordenadas del origen,
+                // sin depender del cálculo interno de píxeles de Leaflet (que puede fallar si el mapa
+                // fue inicializado mientras el contenedor estaba oculto).
+                marker.on('click', () => {
+                    map.invalidateSize(); // garantizar que el mapa mida bien antes de posicionar
+                    L.popup({ maxWidth: 260, autoPan: true, autoPanPadding: [30, 30] })
+                        .setLatLng(coords)
+                        .setContent(popupContent)
+                        .openOn(map);
+                });
 
                 if (servicio.estado === 'SOLICITADO' && typeof animarMarcadorSolicitud === 'function') {
                     animarMarcadorSolicitud(marker);
@@ -628,15 +655,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Inicializar mapa si la sección activa es solicitudes
     const activeSection = document.querySelector('.section.active');
-    if (activeSection && activeSection.id === 'solicitudes') initMap();
+    if (activeSection && activeSection.id === 'solicitudes') {
+        requestAnimationFrame(() => initMap());
+    }
 
     document.querySelectorAll('.sidebar ul li[data-section]').forEach(item => {
         item.addEventListener('click', () => {
             const sectionId = item.getAttribute('data-section');
             showSection(sectionId);
-            if (sectionId === 'solicitudes') initMap();
-            else if (sectionId === 'historial') cargarHistorialLocal();
-            else if (sectionId === 'billetera') cargarIngresosLocal();
+            if (sectionId === 'solicitudes') {
+                requestAnimationFrame(() => {
+                    if (!map) initMap();
+                    else map.invalidateSize();
+                });
+            } else if (sectionId === 'historial') {
+                cargarHistorialLocal();
+            } else if (sectionId === 'billetera') {
+                cargarIngresosLocal();
+            }
         });
     });
 
