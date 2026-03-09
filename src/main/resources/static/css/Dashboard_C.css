@@ -310,7 +310,7 @@ tr:hover {
     position: relative;
     height: 400px;
     border-radius: 12px;
-    overflow: hidden;
+    /* overflow:hidden removed — it clips Leaflet popups outside the visible area */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     border: 3px solid #5ebdda;
     background-color: #f5f5f5;

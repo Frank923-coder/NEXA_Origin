@@ -33,7 +33,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         // Devuelve CustomUserDetails con el id del usuario
         return new CustomUserDetails(
-                usuario.getIdString(), // Asume que Usuario tiene un método getId()
+                usuario.getIdString(),
                 usuario.getEmail(),
                 usuario.getPassword(),
                 Collections.singletonList(new SimpleGrantedAuthority(usuario.getRol().getAuthority())), // Ajusta según tu método getRol()
