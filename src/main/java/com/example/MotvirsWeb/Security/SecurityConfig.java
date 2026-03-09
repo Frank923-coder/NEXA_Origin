@@ -1,11 +1,9 @@
 package com.example.MotvirsWeb.Security;
 
-import com.example.MotvirsWeb.Service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -33,10 +31,12 @@ public class SecurityConfig {
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
                 http
                                 .csrf(csrf -> csrf
-                                                .ignoringRequestMatchers(SecurityConstants.WEBSOCKET_URLS))
+                                                .ignoringRequestMatchers(SecurityConstants.WEBSOCKET_URLS)
+                                                .ignoringRequestMatchers(SecurityConstants.API_URLS))
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(SecurityConstants.STATIC_RESOURCES).permitAll()
                                                 .requestMatchers(SecurityConstants.PUBLIC_URLS).permitAll()
+                                                .requestMatchers(SecurityConstants.API_URLS).authenticated()
                                                 .requestMatchers(SecurityConstants.PASAJERO_URLS).hasRole("PASAJERO")
                                                 .requestMatchers(SecurityConstants.CONDUCTOR_URLS).hasRole("CONDUCTOR")
                                                 .requestMatchers(SecurityConstants.ADMIN_URLS).hasRole("ADMIN")
@@ -56,10 +56,12 @@ public class SecurityConfig {
                                                 .deleteCookies("JSESSIONID")
                                                 .permitAll())
                                 .sessionManagement(session -> session
-                                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                                                .invalidSessionUrl("/auth/login?invalid-session=true")
-                                                .maximumSessions(1)
-                                                .expiredUrl("/auth/login?session-expired=true"))
+                                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)) // Cambiado
+                                                                                                           // para
+                                                                                                           // permitir
+                                                                                                           // stateless
+                                                                                                           // bajo
+                                                                                                           // demanda
                                 .exceptionHandling(ex -> ex
                                                 .accessDeniedHandler(securityExceptionHandler)
                                                 .authenticationEntryPoint(securityExceptionHandler))
