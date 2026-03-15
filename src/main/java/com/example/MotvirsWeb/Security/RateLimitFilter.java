@@ -47,7 +47,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             String clientIp = getClientIP(request);
             
             // Determinar el límite basado en el endpoint
-            int limit = uri.startsWith("/auth/login") ? MAX_AUTH_REQUESTS_PER_MINUTE : MAX_API_REQUESTS_PER_MINUTE;
+            int limit = uri.contains("/login") ? MAX_AUTH_REQUESTS_PER_MINUTE : MAX_API_REQUESTS_PER_MINUTE;
 
             // Incrementar contador
             int currentRequests = requestCounts.getOrDefault(clientIp, 0);
