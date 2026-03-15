@@ -3,6 +3,7 @@ package com.example.MotvirsWeb.Service;
 import com.example.MotvirsWeb.Models.*;
 import com.example.MotvirsWeb.Repositorios.ServicioRepository;
 import com.example.MotvirsWeb.socket.WebSocketService;
+import com.example.MotvirsWeb.Security.IllegalStateTransitionException;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,8 @@ public class ServicioServiceImplTest {
     private ServicioRepository servicioRepository;
     @Mock
     private WebSocketService webSocketService;
+    @Mock
+    private ServicioStateMachine stateMachine;
 
     @InjectMocks
     private ServicioServiceImpl servicioService;
@@ -109,6 +112,10 @@ public class ServicioServiceImplTest {
     void aceptarServicio_AlreadyAccepted_ThrowsException() {
         testServicio.setEstado(EstadoServicio.ACEPTADO);
         when(servicioRepository.findById("s1")).thenReturn(Optional.of(testServicio));
+        
+        // Simular que la maquina de estados lanza la excepcion correspondiente
+        doThrow(new IllegalStateTransitionException("Transición no válida de ACEPTADO a ACEPTADO"))
+            .when(stateMachine).transition(EstadoServicio.ACEPTADO, EstadoServicio.ACEPTADO);
 
         assertThrows(ResponseStatusException.class, () -> servicioService.aceptarServicio("s1", testConductor));
     }
@@ -124,6 +131,7 @@ public class ServicioServiceImplTest {
 
         assertNotNull(result);
         assertEquals(EstadoServicio.FINALIZADO, testServicio.getEstado());
+        verify(stateMachine).transition(EstadoServicio.EN_CURSO, EstadoServicio.FINALIZADO);
         verify(webSocketService).notificarCambioEstadoServicio(any());
     }
 
