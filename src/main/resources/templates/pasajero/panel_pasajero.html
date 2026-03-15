@@ -42,8 +42,20 @@
         <div class="section active" id="perfil">
 
             <h2 id="userFullName" th:text="${pasajero.nombreCompleto}">Nombre del Pasajero</h2>
-
-            <br><br>
+            <br>
+            <div class="setting-box" style="display:flex; flex-direction:column; align-items:flex-start; gap:10px;">
+                <label>Foto de Perfil Local:</label>
+                <input type="file" id="profilePicInput" accept="image/*">
+            </div>
+            <div class="setting-box" style="display:flex; flex-direction:column; align-items:flex-start; gap:10px;">
+                <label>Nombre a Mostrar (Local):</label>
+                <input type="text" id="usernameInput" placeholder="Ingresa tu apodo o nombre" style="width:100%; padding:8px; border-radius:5px; border:1px solid #ccc; background:transparent; color:inherit;">
+            </div>
+            <div class="setting-box" style="display:flex; gap:10px;">
+                <button class="primary-btn" onclick="guardarCambios()" style="flex:1; border-radius:8px; padding:10px; background:#00c4ff; color:inherit; border:none; cursor:pointer;">Guardar Perfil</button>
+                <button class="secondary-btn" onclick="resetPerfil()" style="flex:1; border-radius:8px; padding:10px; background:transparent; color:#00c4ff; border:1px solid #00c4ff; cursor:pointer;">Restablecer</button>
+            </div>
+            <br>
 
             <div class="setting-box">
                 <span><i class="fas fa-bell"></i> Notificaciones para recibir promociones</span>
