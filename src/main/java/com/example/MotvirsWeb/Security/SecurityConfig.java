@@ -26,6 +26,7 @@ public class SecurityConfig {
         private final CustomUserDetailsService customUserDetailsService;
         private final SecurityExceptionHandler securityExceptionHandler;
         private final JwtAuthFilter jwtAuthFilter;
+        private final RateLimitFilter rateLimitFilter;
 
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -65,6 +66,7 @@ public class SecurityConfig {
                                 .exceptionHandling(ex -> ex
                                                 .accessDeniedHandler(securityExceptionHandler)
                                                 .authenticationEntryPoint(securityExceptionHandler))
+                                .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                                 .userDetailsService(customUserDetailsService);
 

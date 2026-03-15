@@ -39,6 +39,7 @@ public class ServicioServiceImpl implements ServicioService {
 
     private final ServicioRepository servicioRepository;
     private final WebSocketService webSocketService;
+    private final ServicioStateMachine stateMachine;
 
     // ─────────────────────────── CONDUCTOR ───────────────────────────
 
@@ -46,9 +47,10 @@ public class ServicioServiceImpl implements ServicioService {
     public Map<String, Object> aceptarServicio(String servicioId, Conductor conductor) {
         Servicio servicio = buscarServicio(servicioId);
 
-        if (servicio.getEstado() != EstadoServicio.SOLICITADO) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "El servicio no está disponible para aceptar");
+        try {
+            stateMachine.transition(servicio.getEstado(), EstadoServicio.ACEPTADO);
+        } catch (IllegalStateTransitionException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
 
         servicio.setConductor(new Servicio.ConductorEmbedded(conductor));
@@ -64,9 +66,10 @@ public class ServicioServiceImpl implements ServicioService {
     public Map<String, Object> iniciarServicio(String servicioId, Conductor conductor) {
         Servicio servicio = buscarServicio(servicioId);
 
-        if (servicio.getEstado() != EstadoServicio.ACEPTADO) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "El servicio no está en estado ACEPTADO");
+        try {
+            stateMachine.transition(servicio.getEstado(), EstadoServicio.EN_CURSO);
+        } catch (IllegalStateTransitionException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
 
         servicio.setEstado(EstadoServicio.EN_CURSO);
@@ -81,10 +84,15 @@ public class ServicioServiceImpl implements ServicioService {
     public Map<String, Object> finalizarServicio(String servicioId, Conductor conductor) {
         Servicio servicio = buscarServicio(servicioId);
 
-        if (servicio.getEstado() != EstadoServicio.EN_CURSO ||
-                !servicio.getConductor().getId().equals(conductor.getId())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "No puedes finalizar este servicio");
+        if (!servicio.getConductor().getId().equals(conductor.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "No puedes finalizar un servicio que no te pertenece");
+        }
+
+        try {
+            stateMachine.transition(servicio.getEstado(), EstadoServicio.FINALIZADO);
+        } catch (IllegalStateTransitionException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
 
         servicio.setEstado(EstadoServicio.FINALIZADO);
@@ -107,10 +115,10 @@ public class ServicioServiceImpl implements ServicioService {
                     "No puedes cancelar este servicio");
         }
 
-        if (servicio.getEstado() == EstadoServicio.FINALIZADO ||
-                servicio.getEstado() == EstadoServicio.CANCELADO) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "El servicio ya está completado o cancelado");
+        try {
+            stateMachine.transition(servicio.getEstado(), EstadoServicio.CANCELADO);
+        } catch (IllegalStateTransitionException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
 
         servicio.setEstado(EstadoServicio.CANCELADO);
@@ -246,10 +254,10 @@ public class ServicioServiceImpl implements ServicioService {
                     "No tienes permiso para cancelar este servicio");
         }
 
-        if (servicio.getEstado() != EstadoServicio.SOLICITADO &&
-                servicio.getEstado() != EstadoServicio.ACEPTADO) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "No puedes cancelar un servicio que ya está " + servicio.getEstado());
+        try {
+            stateMachine.transition(servicio.getEstado(), EstadoServicio.CANCELADO);
+        } catch (IllegalStateTransitionException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
 
         servicio.setEstado(EstadoServicio.CANCELADO);
