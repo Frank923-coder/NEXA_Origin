@@ -2,6 +2,7 @@ package com.example.MotvirsWeb.Service;
 
 import com.example.MotvirsWeb.Models.*;
 import com.example.MotvirsWeb.Repositorios.ServicioRepository;
+import com.example.MotvirsWeb.Security.IllegalStateTransitionException;
 import com.example.MotvirsWeb.socket.WebSocketService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
