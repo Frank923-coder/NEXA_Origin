@@ -31,7 +31,16 @@ public class SecurityConstants {
 
         public static final String[] ADMIN_URLS = {
                         "/admin/**",
-                        "/api/admin/ml"
+                        "/api/admin/ml",
+                        "/api/admin/**"
+        };
+
+        public static final String[] API_PASAJERO_URLS = {
+                        "/api/pasajero/**"
+        };
+
+        public static final String[] API_CONDUCTOR_URLS = {
+                        "/api/conductor/**"
         };
 
         public static final String[] SHARED_URLS = {

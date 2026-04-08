@@ -2,7 +2,6 @@ package com.example.MotvirsWeb.Controladores;
 
 import com.example.MotvirsWeb.Models.Conductor;
 import com.example.MotvirsWeb.Models.EstadoValidacion;
-import com.example.MotvirsWeb.Models.Usuario;
 import com.example.MotvirsWeb.Service.AdminService;
 import com.example.MotvirsWeb.Service.DashboardService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +22,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class ApiAdminController {
 
     private final AdminService adminService;
