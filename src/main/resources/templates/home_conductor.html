@@ -1,257 +1,269 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.w3.org/1999/xhtml">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NEXA - Transporte rápido y seguro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <link href="/css/Homec.css" rel="stylesheet">
+    <link href="/css/chatbot.css" rel="stylesheet">
     <link rel="icon" th:href="@{/icon/NEXA_ICO.ico}">
 </head>
-<body>
-<!-- Navbar -->
-<header>
-    <nav class="navbar">
-        <h2 class="logo"><a href="#">NE<span>XA</span></a></h2>
-        <input type="checkbox" id="menu-toggler">
-        <label for="menu-toggler" id="hamburger-btn">
-            <i class="fas fa-bars"></i>
-        </label>
-        <ul class="all-links">
-            <li><a href="#home" data-section="home">Inicio</a></li>
-            <li><a href="#portfolio" data-section="portfolio">Beneficios</a></li>
-            <li><a href="#contact" data-section="contact">Contacto</a></li>
-            <li><a href="#team" data-section="team">Nosotros</a></li>
-            <li><a href="/public/home/pasajero">Pasajero</a></li>
 
-            <li><a href="/auth/registro" class="btn_Reg">Regístrate</a></li>
-            <li><a th:href="@{/auth/login}" class="btn_Reg">Iniciar</a></li>
+<body data-chat-context="conductor">
+    <!-- Navbar -->
+    <header>
+        <nav class="navbar">
+            <h2 class="logo"><a href="#">NE<span>XA</span></a></h2>
+            <input type="checkbox" id="menu-toggler">
+            <label for="menu-toggler" id="hamburger-btn">
+                <i class="fas fa-bars"></i>
+            </label>
+            <ul class="all-links">
+                <li><a href="#home" data-section="home">Inicio</a></li>
+                <li><a href="#portfolio" data-section="portfolio">Beneficios</a></li>
+                <li><a href="#contact" data-section="contact">Contacto</a></li>
+                <li><a href="#team" data-section="team">Nosotros</a></li>
+                <li><a href="/public/home/pasajero">Pasajero</a></li>
+
+                <li><a href="/auth/registro" class="btn_Reg">Regístrate</a></li>
+                <li><a th:href="@{/auth/login}" class="btn_Reg">Iniciar</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Home Section -->
+    <section class="homepage" id="home">
+        <div class="content">
+            <div class="text">
+                <h1 class="logo">NE<span>XA:</span> Conecta con el movimiento</h1>
+                <p>Evita el tráfico y ahorra tiempo con nuestro servicio de moto.</p>
+            </div>
+            <a href="/auth/registro" class="btn">¡Regístrate ahora!</a>
+        </div>
+    </section>
+
+    <!-- Beneficios Section -->
+    <section class="portfolio" id="portfolio">
+        <h2>Beneficios <span>Exclusivos</span></h2>
+        <p>Descubre las ventajas de ser parte de nuestra comunidad</p>
+        <ul class="cards">
+            <li class="card">
+                <img th:src="@{/img/cupon.png}" alt="Bono">
+                <h3>Bono</h3>
+                <p>Por cada 10 carreras obtendrás una bonificación especial</p>
+            </li>
+            <li class="card">
+                <img th:src="@{/img/fiel.png}" alt="Conductor fiel">
+                <h3>Conductor fiel</h3>
+                <p>Disfruta de premios como cambio de aceite, descuentos en papeles, entre otros beneficios exclusivos
+                </p>
+            </li>
+            <li class="card">
+                <img th:src="@{/img/tecnomecanica.png}" alt="Tecnomecánica">
+                <h3>Revisión tecnomecánica</h3>
+                <p>Siendo un conductor ejemplar, recibes revisión tecnomecánica gratuita cada 6 meses</p>
+            </li>
         </ul>
-    </nav>
-</header>
+    </section>
 
-<!-- Home Section -->
-<section class="homepage" id="home">
-    <div class="content">
-        <div class="text">
-            <h1 class="logo">NE<span>XA:</span> Conecta con el movimiento</h1>
-            <p>Evita el tráfico y ahorra tiempo con nuestro servicio de moto.</p>
-        </div>
-        <a href="/auth/registro" class="btn">¡Regístrate ahora!</a>
-    </div>
-</section>
-
-<!-- Beneficios Section -->
-<section class="portfolio" id="portfolio">
-    <h2>Beneficios <span>Exclusivos</span></h2>
-    <p>Descubre las ventajas de ser parte de nuestra comunidad</p>
-    <ul class="cards">
-        <li class="card">
-            <img th:src="@{/img/cupon.png}" alt="Bono">
-            <h3>Bono</h3>
-            <p>Por cada 10 carreras obtendrás una bonificación especial</p>
-        </li>
-        <li class="card">
-            <img th:src="@{/img/fiel.png}" alt="Conductor fiel">
-            <h3>Conductor fiel</h3>
-            <p>Disfruta de premios como cambio de aceite, descuentos en papeles, entre otros beneficios exclusivos</p>
-        </li>
-        <li class="card">
-            <img th:src="@{/img/tecnomecanica.png}" alt="Tecnomecánica">
-            <h3>Revisión tecnomecánica</h3>
-            <p>Siendo un conductor ejemplar, recibes revisión tecnomecánica gratuita cada 6 meses</p>
-        </li>
-    </ul>
-</section>
-
-<!-- Nosotros Section -->
-<section class="about" id="about">
-    <h2>Sobre <span>Nosotros</span></h2>
-    <p>Conoce más sobre nuestra historia y valores</p>
-    <div class="row">
-        <div class="company-info">
-            <h3>Nuestra historia</h3>
-            <p>
-                La historia de NEXA comienza con una idea simple pero poderosa: brindar un servicio de transporte rápido, seguro y accesible para todos. Fundada en 2023 en Cartagena, hemos crecido gracias a la confianza de nuestros usuarios y la dedicación de nuestro equipo.
-            </p>
-        </div>
-        <div class="mission-vision">
-            <h3>Misión</h3>
-            <p>
-                Nuestra misión es ofrecer un servicio de moto taxi rápido, seguro y accesible, mejorando la movilidad urbana y creando oportunidades económicas para nuestros conductores asociados.
-            </p>
-            <h3>Visión</h3>
-            <p>
-                Aspiramos a convertirnos en el servicio de moto taxi más confiable y reconocido de Cartagena, expandiéndonos a otras ciudades y manteniendo siempre nuestro compromiso con la calidad y la seguridad.
-            </p>
-        </div>
-    </div>
-</section>
-
-<!-- Nuestro Equipo -->
-<section class="team" id="team">
-    <h2>Nuestro <span>Equipo</span></h2>
-    <p>Conoce a quienes hacen posible NEXA</p>
-    <ul class="cards">
-        <li class="card">
-            <img th:src="@{/img/mateo.png}" alt="Mateo Vanegas">
-            <h3>Mateo Vanegas</h3>
-            <p>Fundador y CEO</p>
-        </li>
-        <li class="card">
-            <img th:src="@{/img/weider.png}" alt="Weider Navarro">
-            <h3>Weider Navarro</h3>
-            <p>Gerente de Infraestructura de Datos</p>
-        </li>
-        <li class="card">
-            <img th:src="@{/img/frank.png}" alt="Frank Salcedo">
-            <h3>Frank Salcedo</h3>
-            <p>Coordinador de Diseño Visual</p>
-        </li>
-        <li class="card">
-            <img th:src="@{/img/ferney.png}" alt="Ferney">
-            <h3>Ferney</h3>
-            <p>Director en Servicio al Cliente</p>
-        </li>
-    </ul>
-</section>
-
-<!-- Contacto -->
-<section class="contact" id="contact">
-    <h2>Contáctanos <span>Aquí</span></h2>
-    <p>Estamos para responder cualquier inquietud que tengas</p>
-    <div class="row">
-        <div class="col information">
-            <div class="contact-details">
-                <p><i class="fas fa-envelope"></i> nexabikeservice@gmail.com</p>
-                <p><i class="fas fa-phone"></i> (+57) 986-4763477</p>
-                <p><i class="fas fa-clock"></i> Lunes - Viernes: 8:00 AM - 6:00 PM</p>
-                <p><i class="fas fa-clock"></i> Sábado - Domingo: 10:00 AM - 3:00 PM</p>
-                <p><i class="fas fa-globe"></i> www.NEXA.com</p>
+    <!-- Nosotros Section -->
+    <section class="about" id="about">
+        <h2>Sobre <span>Nosotros</span></h2>
+        <p>Conoce más sobre nuestra historia y valores</p>
+        <div class="row">
+            <div class="company-info">
+                <h3>Nuestra historia</h3>
+                <p>
+                    La historia de NEXA comienza con una idea simple pero poderosa: brindar un servicio de transporte
+                    rápido, seguro y accesible para todos. Fundada en 2023 en Cartagena, hemos crecido gracias a la
+                    confianza de nuestros usuarios y la dedicación de nuestro equipo.
+                </p>
+            </div>
+            <div class="mission-vision">
+                <h3>Misión</h3>
+                <p>
+                    Nuestra misión es ofrecer un servicio de moto taxi rápido, seguro y accesible, mejorando la
+                    movilidad urbana y creando oportunidades económicas para nuestros conductores asociados.
+                </p>
+                <h3>Visión</h3>
+                <p>
+                    Aspiramos a convertirnos en el servicio de moto taxi más confiable y reconocido de Cartagena,
+                    expandiéndonos a otras ciudades y manteniendo siempre nuestro compromiso con la calidad y la
+                    seguridad.
+                </p>
             </div>
         </div>
-        <div class="col form">
-            <form th:action="@{/public/contact}" method="post">
+    </section>
 
-                <div th:if="${mensajeExito}" class="alert-success"
-                     style="background-color: #d4edda; color: #155724; padding: 10px; margin-bottom: 10px; border-radius: 5px; text-align: center;">
-                    <span th:text="${mensajeExito}"></span>
+    <!-- Nuestro Equipo -->
+    <section class="team" id="team">
+        <h2>Nuestro <span>Equipo</span></h2>
+        <p>Conoce a quienes hacen posible NEXA</p>
+        <ul class="cards">
+            <li class="card">
+                <img th:src="@{/img/mateo.png}" alt="Mateo Vanegas">
+                <h3>Mateo Vanegas</h3>
+                <p>Fundador y CEO</p>
+            </li>
+            <li class="card">
+                <img th:src="@{/img/weider.png}" alt="Weider Navarro">
+                <h3>Weider Navarro</h3>
+                <p>Gerente de Infraestructura de Datos</p>
+            </li>
+            <li class="card">
+                <img th:src="@{/img/frank.png}" alt="Frank Salcedo">
+                <h3>Frank Salcedo</h3>
+                <p>Coordinador de Diseño Visual</p>
+            </li>
+            <li class="card">
+                <img th:src="@{/img/ferney.png}" alt="Ferney">
+                <h3>Ferney</h3>
+                <p>Director en Servicio al Cliente</p>
+            </li>
+        </ul>
+    </section>
+
+    <!-- Contacto -->
+    <section class="contact" id="contact">
+        <h2>Contáctanos <span>Aquí</span></h2>
+        <p>Estamos para responder cualquier inquietud que tengas</p>
+        <div class="row">
+            <div class="col information">
+                <div class="contact-details">
+                    <p><i class="fas fa-envelope"></i> nexabikeservice@gmail.com</p>
+                    <p><i class="fas fa-phone"></i> (+57) 986-4763477</p>
+                    <p><i class="fas fa-clock"></i> Lunes - Viernes: 8:00 AM - 6:00 PM</p>
+                    <p><i class="fas fa-clock"></i> Sábado - Domingo: 10:00 AM - 3:00 PM</p>
+                    <p><i class="fas fa-globe"></i> www.NEXA.com</p>
                 </div>
+            </div>
+            <div class="col form">
+                <form th:action="@{/public/contact}" method="post">
 
-                <input type="text" name="nombre" placeholder="Nombre*" required>
-                <input type="email" name="email" placeholder="Email*" required>
+                    <div th:if="${mensajeExito}" class="alert-success"
+                        style="background-color: #d4edda; color: #155724; padding: 10px; margin-bottom: 10px; border-radius: 5px; text-align: center;">
+                        <span th:text="${mensajeExito}"></span>
+                    </div>
 
-                <textarea name="mensaje" placeholder="Mensaje*" required></textarea>
+                    <input type="text" name="nombre" placeholder="Nombre*" required>
+                    <input type="email" name="email" placeholder="Email*" required>
 
-                <button id="submit" type="submit" class="btn">Enviar Mensaje</button>
-            </form>
+                    <textarea name="mensaje" placeholder="Mensaje*" required></textarea>
+
+                    <button id="submit" type="submit" class="btn">Enviar Mensaje</button>
+                </form>
+            </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- Footer -->
-<footer>
-    <div>
-        <span>NEXA© 2025 - Todos los derechos reservados</span>
-        <span class="links">
-            <a href="#home">Inicio</a>
-            <a href="#contact">Contacto</a>
-        </span>
-    </div>
-</footer>
+    <!-- Footer -->
+    <footer>
+        <div>
+            <span>NEXA© 2025 - Todos los derechos reservados</span>
+            <span class="links">
+                <a href="#home">Inicio</a>
+                <a href="#contact">Contacto</a>
+            </span>
+        </div>
+    </footer>
 
-<script src="/js/Homec.js"></script>
-<script>
-    // Sistema de navegación activa
-    document.addEventListener('DOMContentLoaded', function() {
-        // Seleccionar SOLO los enlaces con data-section
-        const navLinks = document.querySelectorAll('a[data-section]');
-        const sections = document.querySelectorAll('section[id]');
-        const menuToggler = document.getElementById('menu-toggler');
+    <script src="/js/Homec.js"></script>
+    <script>
+        // Sistema de navegación activa
+        document.addEventListener('DOMContentLoaded', function () {
+            // Seleccionar SOLO los enlaces con data-section
+            const navLinks = document.querySelectorAll('a[data-section]');
+            const sections = document.querySelectorAll('section[id]');
+            const menuToggler = document.getElementById('menu-toggler');
 
-        // Función para actualizar el enlace activo
-        function updateActiveLink() {
-            const scrollY = window.pageYOffset + 150;
-            let currentSection = 'home';
+            // Función para actualizar el enlace activo
+            function updateActiveLink() {
+                const scrollY = window.pageYOffset + 150;
+                let currentSection = 'home';
 
-            // Encontrar la sección actual
-            sections.forEach(section => {
-                const sectionTop = section.offsetTop;
-                const sectionHeight = section.offsetHeight;
-                const sectionId = section.getAttribute('id');
+                // Encontrar la sección actual
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.offsetHeight;
+                    const sectionId = section.getAttribute('id');
 
-                if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
-                    currentSection = sectionId;
-                }
-            });
-
-            // Actualizar clases active
-            navLinks.forEach(link => {
-                const linkSection = link.getAttribute('data-section');
-
-                if (linkSection === currentSection) {
-                    link.classList.add('active');
-                } else {
-                    link.classList.remove('active');
-                }
-            });
-        }
-
-        // Scroll suave al hacer clic
-        navLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const targetId = this.getAttribute('href');
-                const targetSection = document.querySelector(targetId);
-
-                if (targetSection) {
-                    const offsetPosition = targetSection.offsetTop - 70;
-
-                    window.scrollTo({
-                        top: offsetPosition,
-                        behavior: 'smooth'
-                    });
-
-                    // Cerrar menú móvil
-                    if (menuToggler && menuToggler.checked) {
-                        menuToggler.checked = false;
+                    if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
+                        currentSection = sectionId;
                     }
-                }
-            });
-        });
-
-        // Detectar scroll con throttle
-        let ticking = false;
-        window.addEventListener('scroll', function() {
-            if (!ticking) {
-                window.requestAnimationFrame(function() {
-                    updateActiveLink();
-                    ticking = false;
                 });
-                ticking = true;
+
+                // Actualizar clases active
+                navLinks.forEach(link => {
+                    const linkSection = link.getAttribute('data-section');
+
+                    if (linkSection === currentSection) {
+                        link.classList.add('active');
+                    } else {
+                        link.classList.remove('active');
+                    }
+                });
             }
-        });
 
-        // Inicializar al cargar
-        updateActiveLink();
+            // Scroll suave al hacer clic
+            navLinks.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetSection = document.querySelector(targetId);
 
-        // Animación de aparición de secciones
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
+                    if (targetSection) {
+                        const offsetPosition = targetSection.offsetTop - 70;
+
+                        window.scrollTo({
+                            top: offsetPosition,
+                            behavior: 'smooth'
+                        });
+
+                        // Cerrar menú móvil
+                        if (menuToggler && menuToggler.checked) {
+                            menuToggler.checked = false;
+                        }
+                    }
+                });
+            });
+
+            // Detectar scroll con throttle
+            let ticking = false;
+            window.addEventListener('scroll', function () {
+                if (!ticking) {
+                    window.requestAnimationFrame(function () {
+                        updateActiveLink();
+                        ticking = false;
+                    });
+                    ticking = true;
                 }
             });
-        }, {
-            threshold: 0.1
-        });
 
-        sections.forEach(section => {
-            observer.observe(section);
-        });
-    });
-</script>
+            // Inicializar al cargar
+            updateActiveLink();
 
+            // Animación de aparición de secciones
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, {
+                threshold: 0.1
+            });
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+        });
+    </script>
+
+    <script src="/js/chatbot.js"></script>
 </body>
+
 </html>

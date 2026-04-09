@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,529 +10,542 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" th:href="@{/icon/NEXA_ICO.ico}">
 </head>
+
 <body>
 
-<div class="sidebar" id="sidebar">
-    <div>
-        <div class="sidebar-header">
-            <span class="logo-text" id="user-name">ADM</span>
-            <span class="toggle-btn" onclick="toggleSidebar()">
-                <i class="fas fa-angle-double-left"></i>
-            </span>
+    <div class="sidebar" id="sidebar">
+        <div>
+            <div class="sidebar-header">
+                <span class="logo-text" id="user-name">ADM</span>
+                <span class="toggle-btn" onclick="toggleSidebar()">
+                    <i class="fas fa-angle-double-left"></i>
+                </span>
+            </div>
+            <ul>
+                <li onclick="showSection('home')">
+                    <i class="fas fa-chart-pie"></i> <span class="text">Inicio</span>
+                </li>
+                <li onclick="showSection('dashboard')">
+                    <i class="fas fa-user-check"></i> <span class="text">Validaciones</span>
+                </li>
+                <li onclick="showSection('ml_dashboard')">
+                    <i class="fas fa-brain"></i> <span class="text">Predicciones ML</span>
+                </li>
+                <li onclick="showSection('settings')">
+                    <i class="fas fa-cog"></i> <span class="text">Configuración</span>
+                </li>
+                <form th:action="@{/auth/logout}" method="post" id="logout-form" style="display: none;">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                </form>
+
+                <li onclick="openConfirmModal('Cerrar Sesión', '¿Estás seguro de que deseas cerrar sesión?', 'logout')">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span class="text">Cerrar sesión</span>
+                </li>
+            </ul>
         </div>
-        <ul>
-            <li onclick="showSection('home')">
-                <i class="fas fa-chart-pie"></i> <span class="text">Inicio</span>
-            </li>
-            <li onclick="showSection('dashboard')">
-                <i class="fas fa-user-check"></i> <span class="text">Validaciones</span>
-            </li>
-            <li onclick="showSection('ml_dashboard')">
-                <i class="fas fa-brain"></i> <span class="text">Predicciones ML</span>
-            </li>
-            <li onclick="showSection('settings')">
-                <i class="fas fa-cog"></i> <span class="text">Configuración</span>
-            </li>
-            <form th:action="@{/auth/logout}" method="post" id="logout-form" style="display: none;">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-            </form>
-
-            <li onclick="openConfirmModal('Cerrar Sesión', '¿Estás seguro de que deseas cerrar sesión?', 'logout')">
-                <i class="fas fa-sign-out-alt"></i>
-                <span class="text">Cerrar sesión</span>
-            </li>
-        </ul>
     </div>
-</div>
 
-<div class="main">
+    <div class="main">
 
-    <div id="home" class="section active">
-        <div class="section-header">
-            <button class="menu-toggle-btn">
-                <i class="fas fa-bars"></i>
-            </button>
-            <h2>Bienvenido, <span th:text="${#authentication.principal.username}">Admin</span></h2>
-
-            <div class="header-actions">
-                <button class="btn-refresh" onclick="fetchDashboardData()">
-                    <i class="fas fa-sync-alt"></i> Actualizar
+        <div id="home" class="section active">
+            <div class="section-header">
+                <button class="menu-toggle-btn">
+                    <i class="fas fa-bars"></i>
                 </button>
-            </div>
-        </div>
+                <h2>Bienvenido, <span th:text="${#authentication.principal.username}">Admin</span></h2>
 
-        <div class="cards-container">
-            <div class="card">
-                <div class="card-icon bg-blue">
-                    <i class="fas fa-users"></i>
-                </div>
-                <div class="card-content">
-                    <h3>Pasajeros</h3>
-                    <p id="count-pasajeros" th:text="${totalPasajeros ?: 0}">0</p>
-                </div>
-                <div class="card-footer">
-                    <span class="trend up"><i class="fas fa-arrow-up"></i> 12%</span>
-                    <span>vs último mes</span>
+                <div class="header-actions">
+                    <button class="btn-refresh" onclick="fetchDashboardData()">
+                        <i class="fas fa-sync-alt"></i> Actualizar
+                    </button>
                 </div>
             </div>
 
-            <div class="card">
-                <div class="card-icon bg-green">
-                    <i class="fas fa-id-card"></i>
-                </div>
-                <div class="card-content">
-                    <h3>Conductores</h3>
-                    <p id="count-conductores" th:text="${totalConductores ?: 0}">0</p>
-                </div>
-                <div class="card-footer">
-                    <span class="trend up"><i class="fas fa-arrow-up"></i> 8%</span>
-                    <span>vs último mes</span>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-icon bg-orange">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div class="card-content">
-                    <h3>Pendientes</h3>
-                    <p id="count-pendientes" th:text="${conductoresPendientes != null ? conductoresPendientes.size() : 0}">0</p>
-                </div>
-                <div class="card-footer">
-                    <span class="trend down"><i class="fas fa-arrow-down"></i> 5%</span>
-                    <span>vs última semana</span>
-                </div>
-            </div>
-        </div>
-
-        <!--        <div class="chart-container">-->
-        <!--            <div class="chart-header">-->
-        <!--                <h3>NEXA©</h3>-->
-        <!--            </div>-->
-        <!--            <div class="powerbi-frame">-->
-        <!--                <iframe title="dashboard" width="100%" height="600"-->
-        <!--                        src="https://app.powerbi.com/view?r=eyJrIjoiMmQxNzYzYTYtYTYwYy00ZDcwLThjMzQtMzczZGIwYmEzZTQ5IiwidCI6IjlkMTJiZjNmLWU0ZjYtNDdhYi05MTJmLTFhMmYwZmM0OGFhNCIsImMiOjR9"-->
-        <!--                        frameborder="0" allowFullScreen="true">-->
-        <!--                </iframe>-->
-        <!--            </div>-->
-        <!--        </div>-->
-    </div>
-
-    <div id="dashboard" class="section">
-        <div class="section-header">
-            <button class="menu-toggle-btn">
-                <i class="fas fa-bars"></i>
-            </button>
-            <h2>Validación de Conductores</h2>
-            <div class="header-actions">
-                <button class="btn-refresh" onclick="refreshValidationTable()">
-                    <i class="fas fa-sync-alt"></i> Actualizar
-                </button>
-            </div>
-        </div>
-
-        <div th:if="${success}" class="alert alert-success">
-            <i class="fas fa-check-circle"></i>
-            <span th:text="${success}"></span>
-        </div>
-        <div th:if="${error}" class="alert alert-error">
-            <i class="fas fa-exclamation-circle"></i>
-            <span th:text="${error}"></span>
-        </div>
-
-        <div class="filters">
-            <button class="btn-filter active" onclick="filterTable('all')">Todos</button>
-            <button class="btn-filter" onclick="filterTable('pending')">Pendientes</button>
-            <button class="btn-filter" onclick="filterTable('approved')">Aprobados</button>
-            <button class="btn-filter" onclick="filterTable('rejected')">Rechazados</button>
-        </div>
-
-        <div class="table-container">
-            <table id="tabla-conductores">
-                <thead>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Email</th>
-                    <th>Teléfono</th>
-                    <th>Licencia</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="conductor : ${conductoresPendientes}" th:data-status="${conductor.estadoValidacion.toString().toLowerCase()}">
-                    <td th:text="${conductor.nombre_y_Apellido}" class="clickable"
-                        th:data-nombre="${conductor.nombre_y_Apellido}"
-                        th:data-email="${conductor.email}"
-                        th:data-telefono="${conductor.ntelefono}"
-                        th:data-licencia="${conductor.licencia}"
-                        th:data-soat="${conductor.soat != null ? conductor.soat : 'No disponible'}"
-                        th:data-tarjeta="${conductor.tarjeta_de_propiedad != null ? conductor.tarjeta_de_propiedad : 'No disponible'}"
-                        onclick="openDriverModal(this)">
-                    </td>
-                    <td th:text="${conductor.email}"></td>
-                    <td th:text="${conductor.ntelefono}"></td>
-                    <td th:text="${conductor.licencia}"></td>
-                    <td>
-                        <span th:text="${conductor.estadoValidacion}"
-                              th:classappend="${conductor.estadoValidacion.name() == 'APROBADO'} ? 'status-approved' :
-                                    (${conductor.estadoValidacion.name() == 'RECHAZADO'} ? 'status-rejected' : 'status-pending')">
-                        </span>
-                    </td>
-                    <td>
-                        <div class="action-buttons">
-                            <form th:action="@{/admin/aprobar-conductor}" method="post"
-                                  th:if="${conductor.estadoValidacion.name() != 'APROBADO'}">
-                                <input type="hidden" name="email" th:value="${conductor.email}">
-                                <button type="submit" class="btn-approve">
-                                    <i class="fas fa-check"></i> Aprobar
-                                </button>
-                            </form>
-                            <form th:action="@{/admin/rechazar-conductor}" method="post"
-                                  th:if="${conductor.estadoValidacion.name() != 'RECHAZADO'}">
-                                <input type="hidden" name="email" th:value="${conductor.email}">
-                                <button type="submit" class="btn-reject">
-                                    <i class="fas fa-times"></i> Rechazar
-                                </button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-
-                <tr th:each="conductor : ${conductoresAprobados}" th:data-status="${conductor.estadoValidacion.toString().toLowerCase()}">
-                    <td th:text="${conductor.nombre_y_Apellido}" class="clickable"
-                        th:data-nombre="${conductor.nombre_y_Apellido}"
-                        th:data-email="${conductor.email}"
-                        th:data-telefono="${conductor.ntelefono}"
-                        th:data-licencia="${conductor.licencia}"
-                        th:data-soat="${conductor.soat != null ? conductor.soat : 'No disponible'}"
-                        th:data-tarjeta="${conductor.tarjeta_de_propiedad != null ? conductor.tarjeta_de_propiedad : 'No disponible'}"
-                        onclick="openDriverModal(this)">
-                    </td>
-                    <td th:text="${conductor.email}"></td>
-                    <td th:text="${conductor.ntelefono}"></td>
-                    <td th:text="${conductor.licencia}"></td>
-                    <td><span class="status-approved" th:text="${conductor.estadoValidacion}"></span></td>
-                    <td><span class="no-actions">Aprobado</span></td>
-                </tr>
-
-                <tr th:each="conductor : ${conductoresRechazados}" th:data-status="${conductor.estadoValidacion.toString().toLowerCase()}">
-                    <td th:text="${conductor.nombre_y_Apellido}" class="clickable"
-                        th:data-nombre="${conductor.nombre_y_Apellido}"
-                        th:data-email="${conductor.email}"
-                        th:data-telefono="${conductor.ntelefono}"
-                        th:data-licencia="${conductor.licencia}"
-                        th:data-soat="${conductor.soat != null ? conductor.soat : 'No disponible'}"
-                        th:data-tarjeta="${conductor.tarjeta_de_propiedad != null ? conductor.tarjeta_de_propiedad : 'No disponible'}"
-                        onclick="openDriverModal(this)">
-                    </td>
-                    <td th:text="${conductor.email}"></td>
-                    <td th:text="${conductor.ntelefono}"></td>
-                    <td th:text="${conductor.licencia}"></td>
-                    <td><span class="status-rejected" th:text="${conductor.estadoValidacion}"></span></td>
-                    <td><span class="no-actions">Rechazado</span></td>
-                </tr>
-
-                <tr th:if="${conductoresPendientes.empty && conductoresAprobados.empty && conductoresRechazados.empty}">
-                    <td colspan="6" class="no-data">No hay conductores registrados</td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div id="infoModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button" onclick="closeModal()">×</span>
-            <div class="modal-header">
-                <div class="driver-avatar">
-                    <i class="fas fa-user-circle"></i>
-                </div>
-                <h3 id="modal-nombre"></h3>
-            </div>
-            <div class="modal-body">
-                <p><strong>Email:</strong> <span id="modal-email"></span></p>
-                <p><strong>Teléfono:</strong> <span id="modal-telefono"></span></p>
-                <p><strong>Licencia:</strong> <span id="modal-licencia"></span></p>
-                <p><strong>SOAT:</strong> <span id="modal-soat"></span></p>
-                <p><strong>Tarjeta de Propiedad:</strong> <span id="modal-tarjeta"></span></p>
-            </div>
-            <div class="modal-footer" id="modal-actions"></div>
-        </div>
-    </div>
-    <div id="ml_dashboard" class="section">
-
-        <div class="section-header">
-            <button class="menu-toggle-btn">
-                <i class="fas fa-bars"></i>
-            </button>
-            <h2>Dashboard de Machine Learning</h2>
-            <div class="header-actions">
-                <button class="btn-refresh" onclick="cargarDatosML()">
-                    <i class="fas fa-sync-alt"></i> Actualizar Modelo
-                </button>
-            </div>
-        </div>
-
-        <div class="ml-loader-container" id="ml-loader">
-            <div class="ml-spinner"></div>
-            <p>Cargando datos del modelo activo...</p>
-        </div>
-
-        <div id="ml-content-wrapper" style="display: none;">
-
-            <div class="ml-grid-top">
-
-                <div class="settings-card">
-                    <h3>Panel de Control del Modelo</h3>
-                    <div class="settings-option">
-                        <div class="option-icon"><i class="fas fa-sync-alt"></i></div>
-                        <div class="option-content">
-                            <h3>Re-entrenar Modelo</h3>
-                            <p>
-                                Ejecuta el pipeline de entrenamiento (ETL) y genera una nueva
-                                versión del árbol de decisión.
-                            </p>
-                        </div>
-                        <button class="btn-approve" id="btn-entrenar-ml" onclick="entrenarModeloML()">
-                            <i class="fas fa-play"></i> Entrenar
-                        </button>
+            <div class="cards-container">
+                <div class="card">
+                    <div class="card-icon bg-blue">
+                        <i class="fas fa-users"></i>
                     </div>
-                    <div id="ml-feedback" style="display:none; margin-top: 15px;"></div>
+                    <div class="card-content">
+                        <h3>Pasajeros</h3>
+                        <p id="count-pasajeros" th:text="${totalPasajeros ?: 0}">0</p>
+                    </div>
+                    <div class="card-footer">
+                        <span class="trend up"><i class="fas fa-arrow-up"></i> 12%</span>
+                        <span>vs último mes</span>
+                    </div>
                 </div>
 
                 <div class="card">
-                    <div class="card-icon bg-blue"><i class="fas fa-info-circle"></i></div>
+                    <div class="card-icon bg-green">
+                        <i class="fas fa-id-card"></i>
+                    </div>
                     <div class="card-content">
-                        <h3>Metadatos del Modelo</h3>
-                        <p id="ml-instancias">...</p>
+                        <h3>Conductores</h3>
+                        <p id="count-conductores" th:text="${totalConductores ?: 0}">0</p>
                     </div>
                     <div class="card-footer">
-                        <span id="ml-fecha-entrenamiento">...</span>
+                        <span class="trend up"><i class="fas fa-arrow-up"></i> 8%</span>
+                        <span>vs último mes</span>
                     </div>
                 </div>
 
-            </div> <div class="card">
-            <div class="card-icon bg-green"><i class="fas fa-tree"></i></div>
-            <div class="card-content">
-                <h3>Árbol de Decisión (Reglas J48)</h3>
-            </div>
-
-            <div class="ml-insights-grid">
-
-                <div class="card insight-card">
-                    <div class="card-header-mini">
-                        <i class="fas fa-chess-king" style="color: #ff9800;"></i>
-                        <h4>Factor Principal</h4>
+                <div class="card">
+                    <div class="card-icon bg-orange">
+                        <i class="fas fa-clock"></i>
                     </div>
-                    <div class="insight-body">
-                        <h2 id="insight-factor-nombre">Calculando...</h2>
-                        <p>Es la variable que más define la satisfacción del cliente actualmente.</p>
+                    <div class="card-content">
+                        <h3>Pendientes</h3>
+                        <p id="count-pendientes"
+                            th:text="${conductoresPendientes != null ? conductoresPendientes.size() : 0}">0</p>
                     </div>
-                </div>
-
-                <div class="card insight-card">
-                    <div class="card-header-mini">
-                        <i class="fas fa-star" style="color: #ffd700;"></i>
-                        <h4>Regla de Oro (Satisfacción)</h4>
-                    </div>
-                    <div class="insight-body">
-                        <div id="insight-regla-texto" class="rule-text">Analizando patrones...</div>
-                        <span class="badge-confidence" id="insight-confianza">Alta Confianza</span>
-                    </div>
-                </div>
-
-                <div class="card insight-card simulator-card">
-                    <div class="card-header-mini">
-                        <i class="fas fa-vial" style="color: #00c4ff;"></i>
-                        <h4>Simulador Rápido</h4>
-                    </div>
-                    <div class="simulator-body">
-                        <div class="sim-inputs">
-                            <input type="number" id="sim-duracion" placeholder="Minutos" class="mini-input">
-                            <input type="number" id="sim-distancia" placeholder="KM" class="mini-input">
-                            <input type="number" id="sim-tarifa" placeholder="Precio" class="mini-input">
-                        </div>
-                        <button onclick="simularPrediccionLocal()" class="btn-simular">
-                            <i class="fas fa-magic"></i> Predecir
-                        </button>
-                        <div id="sim-resultado" class="sim-result">---</div>
+                    <div class="card-footer">
+                        <span class="trend down"><i class="fas fa-arrow-down"></i> 5%</span>
+                        <span>vs última semana</span>
                     </div>
                 </div>
             </div>
 
-            <div class="stats-comparison-container">
-                <h3 class="stats-title">Análisis de Histórico: Satisfacción vs. Variables</h3>
+            <!--                <div class="chart-container">-->
+            <!--                    <div class="chart-header">-->
+            <!--                        <h3>NEXA©</h3>-->
+            <!--                    </div>-->
+            <!--                    <div class="powerbi-frame">-->
+            <!--                        <iframe title="dashboard" width="100%" height="600"-->
+            <!--                                src="https://app.powerbi.com/view?r=eyJrIjoiMmQxNzYzYTYtYTYwYy00ZDcwLThjMzQtMzczZGIwYmEzZTQ5IiwidCI6IjlkMTJiZjNmLWU0ZjYtNDdhYi05MTJmLTFhMmYwZmM0OGFhNCIsImMiOjR9"-->
+            <!--                                frameborder="0" allowFullScreen="true">-->
+            <!--                        </iframe>-->
+            <!--                    </div>-->
+            <!--                </div>-->
+        </div>
 
-                <div class="comparison-wrapper">
-                    <div class="stat-side positive">
-                        <div class="stat-header">
-                            <div class="icon-box success"><i class="fas fa-smile"></i></div>
-                            <div>
-                                <h4>SATISFACTORIOS</h4>
-                                <span class="big-number" id="stat-count-si">0</span>
-                                <span class="stat-label">viajes</span>
-                            </div>
-                        </div>
-                        <div class="stat-details">
-                            <div class="detail-item">
-                                <i class="fas fa-money-bill-wave"></i>
-                                <span>Tarifa Prom: <strong id="stat-tarifa-si">$0</strong></span>
-                            </div>
-                            <div class="detail-item">
-                                <i class="fas fa-route"></i>
-                                <span>Distancia Prom: <strong id="stat-distancia-si">0 km</strong></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="vs-divider">
-                        <span>VS</span>
-                    </div>
-
-                    <div class="stat-side negative">
-                        <div class="stat-header">
-                            <div class="icon-box error"><i class="fas fa-frown"></i></div>
-                            <div>
-                                <h4>INSATISFACTORIOS</h4>
-                                <span class="big-number" id="stat-count-no">0</span>
-                                <span class="stat-label">viajes</span>
-                            </div>
-                        </div>
-                        <div class="stat-details">
-                            <div class="detail-item">
-                                <i class="fas fa-money-bill-wave"></i>
-                                <span>Tarifa Prom: <strong id="stat-tarifa-no">$0</strong></span>
-                            </div>
-                            <div class="detail-item">
-                                <i class="fas fa-route"></i>
-                                <span>Distancia Prom: <strong id="stat-distancia-no">0 km</strong></span>
-                            </div>
-                        </div>
-                    </div>
+        <div id="dashboard" class="section">
+            <div class="section-header">
+                <button class="menu-toggle-btn">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h2>Validación de Conductores</h2>
+                <div class="header-actions">
+                    <button class="btn-refresh" onclick="refreshValidationTable()">
+                        <i class="fas fa-sync-alt"></i> Actualizar
+                    </button>
                 </div>
             </div>
 
-            <pre id="ml-arbol-texto" class="ml-arbol-visualizador">
+            <div th:if="${success}" class="alert alert-success">
+                <i class="fas fa-check-circle"></i>
+                <span th:text="${success}"></span>
+            </div>
+            <div th:if="${error}" class="alert alert-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <span th:text="${error}"></span>
+            </div>
+
+            <div class="filters">
+                <button class="btn-filter active" onclick="filterTable('all')">Todos</button>
+                <button class="btn-filter" onclick="filterTable('pending')">Pendientes</button>
+                <button class="btn-filter" onclick="filterTable('approved')">Aprobados</button>
+                <button class="btn-filter" onclick="filterTable('rejected')">Rechazados</button>
+            </div>
+
+            <div class="table-container">
+                <table id="tabla-conductores">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Teléfono</th>
+                            <th>Licencia</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="conductor : ${conductoresPendientes}"
+                            th:data-status="${conductor.estadoValidacion.toString().toLowerCase()}">
+                            <td th:text="${conductor.nombre_y_Apellido}" class="clickable"
+                                th:data-nombre="${conductor.nombre_y_Apellido}" th:data-email="${conductor.email}"
+                                th:data-telefono="${conductor.ntelefono}" th:data-licencia="${conductor.licencia}"
+                                th:data-soat="${conductor.soat != null ? conductor.soat : 'No disponible'}"
+                                th:data-tarjeta="${conductor.tarjeta_de_propiedad != null ? conductor.tarjeta_de_propiedad : 'No disponible'}"
+                                onclick="openDriverModal(this)">
+                            </td>
+                            <td th:text="${conductor.email}"></td>
+                            <td th:text="${conductor.ntelefono}"></td>
+                            <td th:text="${conductor.licencia}"></td>
+                            <td>
+                                <span th:text="${conductor.estadoValidacion}"
+                                    th:classappend="${conductor.estadoValidacion.name() == 'APROBADO'} ? 'status-approved' :
+                                    (${conductor.estadoValidacion.name() == 'RECHAZADO'} ? 'status-rejected' : 'status-pending')">
+                                </span>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <form th:action="@{/admin/aprobar-conductor}" method="post"
+                                        th:if="${conductor.estadoValidacion.name() != 'APROBADO'}">
+                                        <input type="hidden" name="email" th:value="${conductor.email}">
+                                        <button type="submit" class="btn-approve">
+                                            <i class="fas fa-check"></i> Aprobar
+                                        </button>
+                                    </form>
+                                    <form th:action="@{/admin/rechazar-conductor}" method="post"
+                                        th:if="${conductor.estadoValidacion.name() != 'RECHAZADO'}">
+                                        <input type="hidden" name="email" th:value="${conductor.email}">
+                                        <button type="submit" class="btn-reject">
+                                            <i class="fas fa-times"></i> Rechazar
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr th:each="conductor : ${conductoresAprobados}"
+                            th:data-status="${conductor.estadoValidacion.toString().toLowerCase()}">
+                            <td th:text="${conductor.nombre_y_Apellido}" class="clickable"
+                                th:data-nombre="${conductor.nombre_y_Apellido}" th:data-email="${conductor.email}"
+                                th:data-telefono="${conductor.ntelefono}" th:data-licencia="${conductor.licencia}"
+                                th:data-soat="${conductor.soat != null ? conductor.soat : 'No disponible'}"
+                                th:data-tarjeta="${conductor.tarjeta_de_propiedad != null ? conductor.tarjeta_de_propiedad : 'No disponible'}"
+                                onclick="openDriverModal(this)">
+                            </td>
+                            <td th:text="${conductor.email}"></td>
+                            <td th:text="${conductor.ntelefono}"></td>
+                            <td th:text="${conductor.licencia}"></td>
+                            <td><span class="status-approved" th:text="${conductor.estadoValidacion}"></span></td>
+                            <td><span class="no-actions">Aprobado</span></td>
+                        </tr>
+
+                        <tr th:each="conductor : ${conductoresRechazados}"
+                            th:data-status="${conductor.estadoValidacion.toString().toLowerCase()}">
+                            <td th:text="${conductor.nombre_y_Apellido}" class="clickable"
+                                th:data-nombre="${conductor.nombre_y_Apellido}" th:data-email="${conductor.email}"
+                                th:data-telefono="${conductor.ntelefono}" th:data-licencia="${conductor.licencia}"
+                                th:data-soat="${conductor.soat != null ? conductor.soat : 'No disponible'}"
+                                th:data-tarjeta="${conductor.tarjeta_de_propiedad != null ? conductor.tarjeta_de_propiedad : 'No disponible'}"
+                                onclick="openDriverModal(this)">
+                            </td>
+                            <td th:text="${conductor.email}"></td>
+                            <td th:text="${conductor.ntelefono}"></td>
+                            <td th:text="${conductor.licencia}"></td>
+                            <td><span class="status-rejected" th:text="${conductor.estadoValidacion}"></span></td>
+                            <td><span class="no-actions">Rechazado</span></td>
+                        </tr>
+
+                        <tr
+                            th:if="${conductoresPendientes.empty && conductoresAprobados.empty && conductoresRechazados.empty}">
+                            <td colspan="6" class="no-data">No hay conductores registrados</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="infoModal" class="modal">
+            <div class="modal-content">
+                <span class="close-button" onclick="closeModal()">×</span>
+                <div class="modal-header">
+                    <div class="driver-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <h3 id="modal-nombre"></h3>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Email:</strong> <span id="modal-email"></span></p>
+                    <p><strong>Teléfono:</strong> <span id="modal-telefono"></span></p>
+                    <p><strong>Licencia:</strong> <span id="modal-licencia"></span></p>
+                    <p><strong>SOAT:</strong> <span id="modal-soat"></span></p>
+                    <p><strong>Tarjeta de Propiedad:</strong> <span id="modal-tarjeta"></span></p>
+                </div>
+                <div class="modal-footer" id="modal-actions"></div>
+            </div>
+        </div>
+        <div id="ml_dashboard" class="section">
+
+            <div class="section-header">
+                <button class="menu-toggle-btn">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h2>Dashboard de Machine Learning</h2>
+                <div class="header-actions">
+                    <button class="btn-refresh" onclick="cargarDatosML()">
+                        <i class="fas fa-sync-alt"></i> Actualizar Modelo
+                    </button>
+                </div>
+            </div>
+
+            <div class="ml-loader-container" id="ml-loader">
+                <div class="ml-spinner"></div>
+                <p>Cargando datos del modelo activo...</p>
+            </div>
+
+            <div id="ml-content-wrapper" style="display: none;">
+
+                <div class="ml-grid-top">
+
+                    <div class="settings-card">
+                        <h3>Panel de Control del Modelo</h3>
+                        <div class="settings-option">
+                            <div class="option-icon"><i class="fas fa-sync-alt"></i></div>
+                            <div class="option-content">
+                                <h3>Re-entrenar Modelo</h3>
+                                <p>
+                                    Ejecuta el pipeline de entrenamiento (ETL) y genera una nueva
+                                    versión del árbol de decisión.
+                                </p>
+                            </div>
+                            <button class="btn-approve" id="btn-entrenar-ml" onclick="entrenarModeloML()">
+                                <i class="fas fa-play"></i> Entrenar
+                            </button>
+                        </div>
+                        <div id="ml-feedback" style="display:none; margin-top: 15px;"></div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon bg-blue"><i class="fas fa-info-circle"></i></div>
+                        <div class="card-content">
+                            <h3>Metadatos del Modelo</h3>
+                            <p id="ml-instancias">...</p>
+                        </div>
+                        <div class="card-footer">
+                            <span id="ml-fecha-entrenamiento">...</span>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="card">
+                    <div class="card-icon bg-green"><i class="fas fa-tree"></i></div>
+                    <div class="card-content">
+                        <h3>Árbol de Decisión (Reglas J48)</h3>
+                    </div>
+
+                    <div class="ml-insights-grid">
+
+                        <div class="card insight-card">
+                            <div class="card-header-mini">
+                                <i class="fas fa-chess-king" style="color: #ff9800;"></i>
+                                <h4>Factor Principal</h4>
+                            </div>
+                            <div class="insight-body">
+                                <h2 id="insight-factor-nombre">Calculando...</h2>
+                                <p>Es la variable que más define la satisfacción del cliente actualmente.</p>
+                            </div>
+                        </div>
+
+                        <div class="card insight-card">
+                            <div class="card-header-mini">
+                                <i class="fas fa-star" style="color: #ffd700;"></i>
+                                <h4>Regla de Oro (Satisfacción)</h4>
+                            </div>
+                            <div class="insight-body">
+                                <div id="insight-regla-texto" class="rule-text">Analizando patrones...</div>
+                                <span class="badge-confidence" id="insight-confianza">Alta Confianza</span>
+                            </div>
+                        </div>
+
+                        <div class="card insight-card simulator-card">
+                            <div class="card-header-mini">
+                                <i class="fas fa-vial" style="color: #00c4ff;"></i>
+                                <h4>Simulador Rápido</h4>
+                            </div>
+                            <div class="simulator-body">
+                                <div class="sim-inputs">
+                                    <input type="number" id="sim-duracion" placeholder="Minutos" class="mini-input">
+                                    <input type="number" id="sim-distancia" placeholder="KM" class="mini-input">
+                                    <input type="number" id="sim-tarifa" placeholder="Precio" class="mini-input">
+                                </div>
+                                <button onclick="simularPrediccionLocal()" class="btn-simular">
+                                    <i class="fas fa-magic"></i> Predecir
+                                </button>
+                                <div id="sim-resultado" class="sim-result">---</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stats-comparison-container">
+                        <h3 class="stats-title">Análisis de Histórico: Satisfacción vs. Variables</h3>
+
+                        <div class="comparison-wrapper">
+                            <div class="stat-side positive">
+                                <div class="stat-header">
+                                    <div class="icon-box success"><i class="fas fa-smile"></i></div>
+                                    <div>
+                                        <h4>SATISFACTORIOS</h4>
+                                        <span class="big-number" id="stat-count-si">0</span>
+                                        <span class="stat-label">viajes</span>
+                                    </div>
+                                </div>
+                                <div class="stat-details">
+                                    <div class="detail-item">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                        <span>Tarifa Prom: <strong id="stat-tarifa-si">$0</strong></span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <i class="fas fa-route"></i>
+                                        <span>Distancia Prom: <strong id="stat-distancia-si">0 km</strong></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="vs-divider">
+                                <span>VS</span>
+                            </div>
+
+                            <div class="stat-side negative">
+                                <div class="stat-header">
+                                    <div class="icon-box error"><i class="fas fa-frown"></i></div>
+                                    <div>
+                                        <h4>INSATISFACTORIOS</h4>
+                                        <span class="big-number" id="stat-count-no">0</span>
+                                        <span class="stat-label">viajes</span>
+                                    </div>
+                                </div>
+                                <div class="stat-details">
+                                    <div class="detail-item">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                        <span>Tarifa Prom: <strong id="stat-tarifa-no">$0</strong></span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <i class="fas fa-route"></i>
+                                        <span>Distancia Prom: <strong id="stat-distancia-no">0 km</strong></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <pre id="ml-arbol-texto" class="ml-arbol-visualizador">
                 ...
             </pre>
-        </div>
-
-        </div>
-
-    </div>
-
-    <div id="settings" class="section">
-
-        <div class="section-header">
-            <button class="menu-toggle-btn">
-                <i class="fas fa-bars"></i>
-            </button>
-            <h2>Configuración</h2>
-            <div class="header-actions"></div>
-        </div>
-        <div class="settings-container">
-            <div class="settings-option">
-                <div class="option-icon"><i class="fas fa-bell"></i></div>
-                <div class="option-content">
-                    <h3>Notificaciones</h3>
-                    <p>Alertas en vivo (Registros)</p>
                 </div>
-                <label class="switch">
-                    <input type="checkbox" id="notif" th:checked="${notificacionesActivas}">
-                    <span class="slider round"></span>
-                </label>
+
             </div>
 
-            <div class="settings-option" onclick="openPermissionsModal()" style="cursor: pointer;">
-                <div class="option-icon"><i class="fas fa-user-shield"></i></div>
-                <div class="option-content">
-                    <h3>Manual Admin</h3>
-                    <p>Guía de acceso</p>
-                </div>
-                <button class="btn-settings"><i class="fas fa-chevron-right"></i></button>
-            </div>
-
-            <div class="settings-option">
-                <div class="option-icon"><i class="fas fa-palette"></i></div>
-                <div class="option-content">
-                    <h3>Apariencia</h3>
-                    <p>Modo Claro / Oscuro</p>
-                </div>
-                <div class="theme-selector">
-                    <div class="theme-option light active" onclick="changeTheme('light')" title="Modo Claro"></div>
-                    <div class="theme-option dark" onclick="changeTheme('dark')" title="Modo Oscuro"></div>
-                </div>
-            </div>
         </div>
-    </div>
 
-    <div class="confirm-modal-overlay" id="confirm-modal" style="display: none;">
-        <div class="confirm-modal-content">
-            <div class="confirm-modal-header">
-                <i class="fas fa-exclamation-triangle"></i>
-                <h3 id="confirm-modal-title">Título de Confirmación</h3>
-            </div>
-            <p id="confirm-modal-message">Mensaje de confirmación...</p>
-            <div class="confirm-modal-actions">
-                <button class="btn-cancel" onclick="closeConfirmModal()">
-                    Cancelar
+        <div id="settings" class="section">
+
+            <div class="section-header">
+                <button class="menu-toggle-btn">
+                    <i class="fas fa-bars"></i>
                 </button>
-                <button class="btn-confirm-danger" id="confirm-modal-btn-yes">
-                    Confirmar
-                </button>
+                <h2>Configuración</h2>
+                <div class="header-actions"></div>
+            </div>
+            <div class="settings-container">
+                <div class="settings-option">
+                    <div class="option-icon"><i class="fas fa-bell"></i></div>
+                    <div class="option-content">
+                        <h3>Notificaciones</h3>
+                        <p>Alertas en vivo (Registros)</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="notif" th:checked="${notificacionesActivas}">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+                <div class="settings-option" onclick="openPermissionsModal()" style="cursor: pointer;">
+                    <div class="option-icon"><i class="fas fa-user-shield"></i></div>
+                    <div class="option-content">
+                        <h3>Manual Admin</h3>
+                        <p>Guía de acceso</p>
+                    </div>
+                    <button class="btn-settings"><i class="fas fa-chevron-right"></i></button>
+                </div>
+
+                <div class="settings-option">
+                    <div class="option-icon"><i class="fas fa-palette"></i></div>
+                    <div class="option-content">
+                        <h3>Apariencia</h3>
+                        <p>Modo Claro / Oscuro</p>
+                    </div>
+                    <div class="theme-selector">
+                        <div class="theme-option light active" onclick="changeTheme('light')" title="Modo Claro"></div>
+                        <div class="theme-option dark" onclick="changeTheme('dark')" title="Modo Oscuro"></div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div id="permissionsModal" class="modal">
-        <div class="modal-content" style="max-width: 600px;">
-            <span class="close-button" onclick="closePermissionsModal()">×</span>
-
-            <div class="modal-header">
-                <div class="driver-avatar" style="border-color: var(--secondary); background: rgba(0, 196, 255, 0.1);">
-                    <i class="fas fa-book" style="color: var(--secondary);"></i>
+        <div class="confirm-modal-overlay" id="confirm-modal" style="display: none;">
+            <div class="confirm-modal-content">
+                <div class="confirm-modal-header">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3 id="confirm-modal-title">Título de Confirmación</h3>
                 </div>
-                <h3>Manual de Administrador</h3>
-                <p style="color: var(--text-secondary); font-size: 0.9em;">Guía de funcionalidades del panel NEXA</p>
-            </div>
-
-            <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
-
-                <div style="margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px;">
-                    <h4 style="color: var(--primary-dark); margin-bottom: 8px;"><i class="fas fa-chart-pie"></i> Dashboard Principal</h4>
-                    <p style="font-size: 13px; color: var(--text-secondary);">Visualización de métricas en tiempo real. Los indicadores de tendencia comparan el rendimiento actual con el mes anterior.</p>
+                <p id="confirm-modal-message">Mensaje de confirmación...</p>
+                <div class="confirm-modal-actions">
+                    <button class="btn-cancel" onclick="closeConfirmModal()">
+                        Cancelar
+                    </button>
+                    <button class="btn-confirm-danger" id="confirm-modal-btn-yes">
+                        Confirmar
+                    </button>
                 </div>
-
-                <div style="margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px;">
-                    <h4 style="color: var(--primary-dark); margin-bottom: 8px;"><i class="fas fa-user-check"></i> Validaciones</h4>
-                    <p style="font-size: 13px; color: var(--text-secondary);">Control de acceso para conductores.</p>
-                    <ul style="font-size: 13px; color: var(--text-secondary); margin-left: 20px;">
-                        <li><strong>Aprobar:</strong> Otorga acceso inmediato a la app de conductor.</li>
-                        <li><strong>Rechazar:</strong> Bloquea el acceso. El conductor deberá contactar soporte.</li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h4 style="color: var(--primary-dark); margin-bottom: 8px;"><i class="fas fa-brain"></i> Machine Learning (J48)</h4>
-                    <p style="font-size: 13px; color: var(--text-secondary);">Modelo predictivo de satisfacción.</p>
-                    <ul style="font-size: 13px; color: var(--text-secondary); margin-left: 20px;">
-                        <li><strong>Re-entrenar:</strong> Actualiza el árbol de decisión con los últimos viajes.</li>
-                        <li><strong>Simulador:</strong> Permite probar escenarios hipotéticos (tarifa vs distancia).</li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="modal-footer">
-                <button class="btn-refresh" onclick="closePermissionsModal()" style="width: 100%; justify-content: center;">Entendido</button>
             </div>
         </div>
-    </div>
 
-</div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="/js/Dashboard_A.js" defer></script>
+        <div id="permissionsModal" class="modal">
+            <div class="modal-content" style="max-width: 600px;">
+                <span class="close-button" onclick="closePermissionsModal()">×</span>
+
+                <div class="modal-header">
+                    <div class="driver-avatar"
+                        style="border-color: var(--secondary); background: rgba(0, 196, 255, 0.1);">
+                        <i class="fas fa-book" style="color: var(--secondary);"></i>
+                    </div>
+                    <h3>Manual de Administrador</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9em;">Guía de funcionalidades del panel NEXA
+                    </p>
+                </div>
+
+                <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
+
+                    <div style="margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px;">
+                        <h4 style="color: var(--primary-dark); margin-bottom: 8px;"><i class="fas fa-chart-pie"></i>
+                            Dashboard Principal</h4>
+                        <p style="font-size: 13px; color: var(--text-secondary);">Visualización de métricas en tiempo
+                            real. Los indicadores de tendencia comparan el rendimiento actual con el mes anterior.</p>
+                    </div>
+
+                    <div style="margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px;">
+                        <h4 style="color: var(--primary-dark); margin-bottom: 8px;"><i class="fas fa-user-check"></i>
+                            Validaciones</h4>
+                        <p style="font-size: 13px; color: var(--text-secondary);">Control de acceso para conductores.
+                        </p>
+                        <ul style="font-size: 13px; color: var(--text-secondary); margin-left: 20px;">
+                            <li><strong>Aprobar:</strong> Otorga acceso inmediato a la app de conductor.</li>
+                            <li><strong>Rechazar:</strong> Bloquea el acceso. El conductor deberá contactar soporte.
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 style="color: var(--primary-dark); margin-bottom: 8px;"><i class="fas fa-brain"></i> Machine
+                            Learning (J48)</h4>
+                        <p style="font-size: 13px; color: var(--text-secondary);">Modelo predictivo de satisfacción.</p>
+                        <ul style="font-size: 13px; color: var(--text-secondary); margin-left: 20px;">
+                            <li><strong>Re-entrenar:</strong> Actualiza el árbol de decisión con los últimos viajes.
+                            </li>
+                            <li><strong>Simulador:</strong> Permite probar escenarios hipotéticos (tarifa vs distancia).
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn-refresh" onclick="closePermissionsModal()"
+                        style="width: 100%; justify-content: center;">Entendido</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/js/Dashboard_A.js" defer></script>
 </body>
+
 </html>

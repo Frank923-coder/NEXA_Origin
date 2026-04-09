@@ -32,7 +32,8 @@ public class SecurityConfig {
                 http
                                 .csrf(csrf -> csrf
                                                 .ignoringRequestMatchers(SecurityConstants.WEBSOCKET_URLS)
-                                                .ignoringRequestMatchers(SecurityConstants.API_URLS))
+                                                .ignoringRequestMatchers(SecurityConstants.API_URLS)
+                                                .ignoringRequestMatchers("/public/chat"))
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(SecurityConstants.STATIC_RESOURCES).permitAll()
                                                 .requestMatchers(SecurityConstants.PUBLIC_URLS).permitAll()
