@@ -31,7 +31,7 @@ function showSection(id) {
 
 function toggleDarkMode() {
     const isDark = document.body.classList.toggle('dark-mode');
-    localStorage.setItem('darkMode', isDark);
+    try { localStorage.setItem('darkMode', isDark); } catch(e) { console.warn('localStorage bloqueado'); }
     document.getElementById('darkModeText').textContent = isDark ? 'Modo claro' : 'Modo oscuro';
     if (currentTileLayer && map) {
         map.removeLayer(currentTileLayer);
@@ -43,11 +43,13 @@ function toggleDarkMode() {
 }
 
 function checkDarkMode() {
-    const isDark = localStorage.getItem('darkMode') === 'true';
-    if (isDark) {
-        document.body.classList.add('dark-mode');
-        document.getElementById('darkModeText').textContent = 'Modo claro';
-    }
+    try {
+        const isDark = localStorage.getItem('darkMode') === 'true';
+        if (isDark) {
+            document.body.classList.add('dark-mode');
+            document.getElementById('darkModeText').textContent = 'Modo claro';
+        }
+    } catch(e) { console.warn('localStorage bloqueado'); }
 }
 
 function guardarCambios() {
@@ -58,29 +60,33 @@ function guardarCambios() {
 
     if (username) {
         usernameDisplay.textContent = username;
-        localStorage.setItem('username', username);
+        try { localStorage.setItem('username', username); } catch(e) {}
     }
 
     if (profilePicInput.files && profilePicInput.files[0]) {
         const reader = new FileReader();
         reader.onload = function (e) {
             profilePicDisplay.src = e.target.result;
-            localStorage.setItem('profilePic', e.target.result);
+            try { localStorage.setItem('profilePic', e.target.result); } catch(err) {}
         };
         reader.readAsDataURL(profilePicInput.files[0]);
     }
 }
 
 function loadProfileData() {
-    const savedUsername = localStorage.getItem('username');
-    const savedProfilePic = localStorage.getItem('profilePic');
-    if (savedUsername) { document.getElementById('usernameInput').value = savedUsername; document.getElementById('usernameDisplay').textContent = savedUsername; }
-    if (savedProfilePic) { document.getElementById('profilePicDisplay').src = savedProfilePic; }
+    try {
+        const savedUsername = localStorage.getItem('username');
+        const savedProfilePic = localStorage.getItem('profilePic');
+        if (savedUsername) { document.getElementById('usernameInput').value = savedUsername; document.getElementById('usernameDisplay').textContent = savedUsername; }
+        if (savedProfilePic) { document.getElementById('profilePicDisplay').src = savedProfilePic; }
+    } catch(e) { console.warn('localStorage bloqueado'); }
 }
 
 function resetPerfil() {
-    localStorage.removeItem('username');
-    localStorage.removeItem('profilePic');
+    try {
+        localStorage.removeItem('username');
+        localStorage.removeItem('profilePic');
+    } catch(e) {}
     document.getElementById('usernameInput').value = 'USER';
     document.getElementById('usernameDisplay').textContent = 'USER';
     document.getElementById('profilePicDisplay').src = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
@@ -746,10 +752,11 @@ if (confirmModal) confirmModal.addEventListener('click', (e) => { if (e.target =
 function initNotificationSettings() {
     const chkNotif = document.getElementById('chkNotificaciones');
     if (!chkNotif) return;
-    const savedState = localStorage.getItem('receiveNotifications');
+    let savedState = null;
+    try { savedState = localStorage.getItem('receiveNotifications'); } catch(e) {}
     chkNotif.checked = savedState === null ? true : (savedState === 'true');
     chkNotif.addEventListener('change', function () {
-        localStorage.setItem('receiveNotifications', this.checked);
+        try { localStorage.setItem('receiveNotifications', this.checked); } catch(e) {}
         if (this.checked) showNewRequestToast('Sistema', 'Notificaciones activadas correctamente');
     });
 }

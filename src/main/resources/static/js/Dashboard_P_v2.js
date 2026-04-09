@@ -38,7 +38,7 @@ function showSection(id) {
 
 function toggleDarkMode() {
   const isDark = document.body.classList.toggle('dark-mode');
-  localStorage.setItem('darkMode', isDark);
+  try { localStorage.setItem('darkMode', isDark); } catch(e) {}
   document.getElementById('darkModeText').textContent = isDark ? 'Modo claro' : 'Modo oscuro';
   if (currentTileLayer && map) {
     map.removeLayer(currentTileLayer);
@@ -53,11 +53,13 @@ function toggleDarkMode() {
 }
 
 function checkDarkMode() {
-  const isDark = localStorage.getItem('darkMode') === 'true';
-  if (isDark) {
-    document.body.classList.add('dark-mode');
-    document.getElementById('darkModeText').textContent = 'Modo claro';
-  }
+  try {
+    const isDark = localStorage.getItem('darkMode') === 'true';
+    if (isDark) {
+      document.body.classList.add('dark-mode');
+      document.getElementById('darkModeText').textContent = 'Modo claro';
+    }
+  } catch(e) {}
 }
 
 function guardarCambios() {
@@ -68,7 +70,7 @@ function guardarCambios() {
 
   if (username) {
     usernameDisplay.textContent = username;
-    localStorage.setItem('username', username);
+    try { localStorage.setItem('username', username); } catch(e) {}
   }
 
   if (profilePicInput.files && profilePicInput.files[0]) {
@@ -76,29 +78,33 @@ function guardarCambios() {
     reader.onload = function (e) {
       const imageData = e.target.result;
       profilePicDisplay.src = imageData;
-      localStorage.setItem('profilePic', imageData);
+      try { localStorage.setItem('profilePic', imageData); } catch(e) {}
     };
     reader.readAsDataURL(profilePicInput.files[0]);
   }
 }
 
 function loadProfileData() {
-  const savedUsername = localStorage.getItem('username');
-  const savedProfilePic = localStorage.getItem('profilePic');
+  try {
+    const savedUsername = localStorage.getItem('username');
+    const savedProfilePic = localStorage.getItem('profilePic');
 
-  if (savedUsername) {
-    document.getElementById('usernameInput').value = savedUsername;
-    document.getElementById('usernameDisplay').textContent = savedUsername;
-  }
+    if (savedUsername) {
+      document.getElementById('usernameInput').value = savedUsername;
+      document.getElementById('usernameDisplay').textContent = savedUsername;
+    }
 
-  if (savedProfilePic) {
-    document.getElementById('profilePicDisplay').src = savedProfilePic;
-  }
+    if (savedProfilePic) {
+      document.getElementById('profilePicDisplay').src = savedProfilePic;
+    }
+  } catch(e) {}
 }
 
 function resetPerfil() {
-  localStorage.removeItem('username');
-  localStorage.removeItem('profilePic');
+  try {
+    localStorage.removeItem('username');
+    localStorage.removeItem('profilePic');
+  } catch(e) {}
   document.getElementById('usernameInput').value = 'USER';
   document.getElementById('usernameDisplay').textContent = 'USER';
   document.getElementById('profilePicDisplay').src = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
@@ -744,7 +750,8 @@ function cancelarViaje(servicioId) {
 }
 
 function subscribeToPasajeroTopic() {
-  const userId = localStorage.getItem('userId');
+  let userId = null;
+  try { userId = localStorage.getItem('userId'); } catch(e) {}
   if (userId && stompClient) {
     stompClient.subscribe('/topic/pasajero/' + userId, function (message) {
       const servicio = JSON.parse(message.body);
