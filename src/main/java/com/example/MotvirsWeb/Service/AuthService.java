@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -49,7 +50,7 @@ public class AuthService {
         return usuarioGuardado;
     }
 
-    public Pasajero registrarPasajero(String nombreCompleto, String email,
+    public Pasajero registrarPasajero(String nombreCompleto, String documentoIdentidad, String email,
             String telefono, String password) {
         if (usuarioRepository.findByEmailAndRol(email, Rol.PASAJERO).isPresent()) {
             throw new IllegalStateException("Ya existe un pasajero registrado con este email: " + email);
@@ -61,7 +62,10 @@ public class AuthService {
                 .rol(Rol.PASAJERO)
                 .estadoValidacion(EstadoValidacion.APROBADO)
                 .nombreCompleto(nombreCompleto)
+                .documentoIdentidad(documentoIdentidad)
                 .telefono(telefono)
+                .fechaAceptacionTerminos(LocalDateTime.now())
+                .versionTerminos("v1.0-2026")
                 .build();
 
         Pasajero pasajeroGuardado = usuarioRepository.save(pasajero);
@@ -69,8 +73,7 @@ public class AuthService {
         return pasajeroGuardado;
     }
 
-    public Conductor registrarConductor(String nombre, String email, String password,
-            int licencia, Long soat, Long tarjetaPropiedad) {
+    public Conductor registrarConductor(String nombre, String documentoIdentidad, String email, String password, String licencia) {
         // Validación
         if (usuarioRepository.findByEmailAndRol(email, Rol.CONDUCTOR).isPresent()) {
             throw new IllegalStateException("Ya existe un conductor registrado con este email: " + email);
@@ -83,9 +86,10 @@ public class AuthService {
                 .rol(Rol.CONDUCTOR)
                 .estadoValidacion(EstadoValidacion.PENDIENTE)
                 .nombre_y_Apellido(nombre)
-                .licencia(licencia)
-                .soat(soat)
-                .tarjeta_de_propiedad(tarjetaPropiedad)
+                .documentoIdentidad(documentoIdentidad)
+                .licenciaNumero(licencia)
+                .fechaAceptacionTerminos(LocalDateTime.now())
+                .versionTerminos("v1.0-2026")
                 .build();
 
         // Guardado en BD

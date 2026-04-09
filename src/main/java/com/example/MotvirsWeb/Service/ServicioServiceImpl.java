@@ -3,6 +3,7 @@ package com.example.MotvirsWeb.Service;
 import com.example.MotvirsWeb.Models.*;
 import com.example.MotvirsWeb.Repositorios.ServicioRepository;
 import com.example.MotvirsWeb.Security.IllegalStateTransitionException;
+import com.example.MotvirsWeb.Repositorios.VehiculoRepository;
 import com.example.MotvirsWeb.socket.WebSocketService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +40,7 @@ import java.util.stream.Collectors;
 public class ServicioServiceImpl implements ServicioService {
 
     private final ServicioRepository servicioRepository;
+    private final VehiculoRepository vehiculoRepository;
     private final WebSocketService webSocketService;
     private final ServicioStateMachine stateMachine;
 
@@ -47,6 +49,28 @@ public class ServicioServiceImpl implements ServicioService {
     @Override
     public Map<String, Object> aceptarServicio(String servicioId, Conductor conductor) {
         Servicio servicio = buscarServicio(servicioId);
+
+        // --- Validaciones Legales de Conductor/Vehículo ---
+        if (conductor.getVehiculos() == null || conductor.getVehiculos().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El conductor no tiene vehículos asignados.");
+        }
+        
+        Vehiculo vehiculo = vehiculoRepository.findById(conductor.getVehiculos().get(0).toString())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vehículo no existe"));
+            
+        if (vehiculo.getSoatVencimiento() != null) {
+            long daysToSoatExpiry = java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), vehiculo.getSoatVencimiento());
+            if (daysToSoatExpiry <= 1) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tu SOAT está vencido o vence en menos de 24 horas. No puedes aceptar servicios.");
+            }
+        }
+        
+        if (vehiculo.getRtmVencimiento() != null) {
+             long daysToRtmExpiry = java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), vehiculo.getRtmVencimiento());
+             if (daysToRtmExpiry <= 1) {
+                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tu RTM está vencida o vence en menos de 24 horas. No puedes aceptar servicios.");
+             }
+        }
 
         try {
             stateMachine.transition(servicio.getEstado(), EstadoServicio.ACEPTADO);
@@ -212,6 +236,28 @@ public class ServicioServiceImpl implements ServicioService {
         servicio.setUbicacionDestino(new Servicio.Coordenada(
                 parseDoble(ubicacionDestino.get("latitud")),
                 parseDoble(ubicacionDestino.get("longitud"))));
+
+        // -- Validaciones de Pasajeros y Vehículo --
+        int pasajerosSol = solicitud.containsKey("numeroPasajeros") ? 
+            ((Number) solicitud.get("numeroPasajeros")).intValue() : 1;
+        
+        String tipoPedidoStr = (String) solicitud.getOrDefault("tipoVehiculoPedido", "CARRO_PARTICULAR");
+        Vehiculo.TipoVehiculo tipoPedido;
+        try {
+            tipoPedido = Vehiculo.TipoVehiculo.valueOf(tipoPedidoStr.toUpperCase());
+        } catch(IllegalArgumentException e) {
+            tipoPedido = Vehiculo.TipoVehiculo.CARRO_PARTICULAR;
+        }
+
+        if (tipoPedido == Vehiculo.TipoVehiculo.MOTO && pasajerosSol > 1) {
+             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Las motos no pueden llevar más de 1 pasajero.");
+        }
+        if (pasajerosSol > 4) {
+             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pueden llevar más de 4 pasajeros.");
+        }
+
+        servicio.setNumeroPasajeros(pasajerosSol);
+        servicio.setTipoVehiculoPedido(tipoPedido);
 
         double tarifa = parseDoble(solicitud.get("tarifa"));
         if (tarifa <= 0) {

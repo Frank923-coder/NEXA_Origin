@@ -63,7 +63,7 @@ public class AuthServiceTest {
         when(passwordEncoder.encode(anyString())).thenReturn("encoded_pass");
         when(usuarioRepository.save(any(Pasajero.class))).thenReturn(testPasajero);
 
-        Pasajero result = authService.registrarPasajero("Test Name", "pasajero@test.com", "123456", "password");
+        Pasajero result = authService.registrarPasajero("Test Name", "101010101", "pasajero@test.com", "123456", "password");
 
         assertNotNull(result);
         assertEquals("pasajero@test.com", result.getEmail());
@@ -77,7 +77,7 @@ public class AuthServiceTest {
                 .thenReturn(Optional.of(testPasajero));
 
         assertThrows(IllegalStateException.class,
-                () -> authService.registrarPasajero("Test Name", "pasajero@test.com", "123456", "password"));
+                () -> authService.registrarPasajero("Test Name", "101010101", "pasajero@test.com", "123456", "password"));
     }
 
     @Test

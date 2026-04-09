@@ -57,9 +57,6 @@ public class ApiPasajeroControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private ServicioServiceImpl servicioServiceImpl;
-
-    @MockBean
     private ServicioService servicioService;
 
     @MockBean
@@ -105,7 +102,6 @@ public class ApiPasajeroControllerTest {
         solicitud.put("metodoPago", "EFECTIVO");
 
         when(usuarioRepository.findByEmail("pasajero@test.com")).thenReturn(Optional.of(testPasajero));
-        when(servicioServiceImpl.solicitarViaje(any(), any())).thenReturn(Map.of("mensaje", "Viaje solicitado", "servicioId", "s1"));
         when(servicioService.solicitarViaje(any(), any())).thenReturn(Map.of("mensaje", "Viaje solicitado", "servicioId", "s1"));
 
         mockMvc.perform(post("/api/pasajero/solicitar-viaje")
@@ -143,8 +139,8 @@ public class ApiPasajeroControllerTest {
     }
 
     @Test
-    public void unauthorizedAccess_ShouldReturn401() throws Exception {
+    public void unauthorizedAccess_ShouldReturnForbidden() throws Exception {
         mockMvc.perform(get("/api/pasajero/perfil"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
     }
 }

@@ -3,6 +3,7 @@ package com.example.MotvirsWeb.Controladores;
 import com.example.MotvirsWeb.Models.*;
 import com.example.MotvirsWeb.Repositorios.VehiculoRepository;
 import com.example.MotvirsWeb.Service.AuthService;
+import com.example.MotvirsWeb.Security.CaptchaService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
@@ -31,6 +32,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final VehiculoRepository vehiculoRepository;
+    private final CaptchaService captchaService;
 
     @GetMapping("/registro")
     public String mostrarFormularioRegistro() {
@@ -76,11 +78,18 @@ public class AuthController {
     public String registrarPasajero(
             @RequestParam String nombre,
             @RequestParam String apellido,
+            @RequestParam String documentoIdentidad,
             @RequestParam String email,
             @RequestParam String telefono,
             @RequestParam String password,
             @RequestParam String confirmPassword,
+            @RequestParam(value = "cf-turnstile-response", required = false) String turnstileResponse,
             RedirectAttributes redirectAttributes) {
+
+        if (!captchaService.isHuman(turnstileResponse)) {
+            redirectAttributes.addFlashAttribute("errorPasajero", "Error de Captcha. Por favor, verifica que eres humano.");
+            return "redirect:/auth/registro";
+        }
 
         if (!password.equals(confirmPassword)) {
             redirectAttributes.addFlashAttribute("errorPasajero", "Las contraseñas no coinciden");
@@ -89,10 +98,15 @@ public class AuthController {
 
         try {
             // Delegamos la creación y persistencia completa al servicio
-            authService.registrarPasajero(nombre + " " + apellido, email, telefono, password);
+            authService.registrarPasajero(nombre + " " + apellido, documentoIdentidad, email, telefono, password);
 
             redirectAttributes.addFlashAttribute("success", "Registro exitoso. Por favor inicia sesión.");
             return "redirect:/auth/login";
+        } catch (jakarta.validation.ConstraintViolationException e) {
+            String msg = e.getConstraintViolations().stream()
+                .map(cv -> cv.getMessage()).findFirst().orElse("Error de validación");
+            redirectAttributes.addFlashAttribute("errorPasajero", msg);
+            return "redirect:/auth/registro";
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorPasajero", e.getMessage());
             return "redirect:/auth/registro";
@@ -102,6 +116,7 @@ public class AuthController {
     @PostMapping("/registro/conductor")
     public String registrarConductor(
             @RequestParam String nombre,
+            @RequestParam String documentoIdentidad,
             @RequestParam String email,
             @RequestParam String telefono,
             @RequestParam String password,
@@ -114,7 +129,13 @@ public class AuthController {
             @RequestParam String tarjetaPropiedad,
             @RequestParam String soat,
             @RequestParam String tecnomecanica,
+            @RequestParam(value = "cf-turnstile-response", required = false) String turnstileResponse,
             RedirectAttributes redirectAttributes) {
+
+        if (!captchaService.isHuman(turnstileResponse)) {
+            redirectAttributes.addFlashAttribute("errorConductor", "Error de Captcha. Por favor, verifica que eres humano.");
+            return "redirect:/auth/registro#conductor";
+        }
 
         if (!password.equals(confirmPassword)) {
             redirectAttributes.addFlashAttribute("errorConductor", "Las contraseñas no coinciden");
@@ -124,10 +145,7 @@ public class AuthController {
         try {
             // La lógica de creación de Conductor vive en AuthService
             Conductor conductor = authService.registrarConductor(
-                    nombre, email, password,
-                    Integer.parseInt(licencia),
-                    Long.parseLong(soat),
-                    Long.parseLong(tarjetaPropiedad));
+                    nombre, documentoIdentidad, email, password, licencia);
 
             // El Vehículo se asocia aquí porque el Controller tiene el contexto HTTP de
             // todos
@@ -137,8 +155,10 @@ public class AuthController {
                     .marca(marca)
                     .modelo(modelo)
                     .color(color)
-                    .tecnomecanicaId(Integer.parseInt(tecnomecanica))
+                    .soatNumero(soat)
+                    .tecnomecanicaId(tecnomecanica)
                     .conductorAsignado(conductor)
+                    .tipoVehiculo(Vehiculo.TipoVehiculo.CARRO_PARTICULAR)
                     .activo(true)
                     .fechaRegistro(LocalDate.now())
                     .build();
@@ -157,6 +177,11 @@ public class AuthController {
 
             redirectAttributes.addFlashAttribute("success", "Registro exitoso. Por favor inicia sesión.");
             return "redirect:/auth/login";
+        } catch (jakarta.validation.ConstraintViolationException e) {
+            String msg = e.getConstraintViolations().stream()
+                .map(cv -> cv.getMessage()).findFirst().orElse("Error de validación");
+            redirectAttributes.addFlashAttribute("errorConductor", msg);
+            return "redirect:/auth/registro#conductor";
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorConductor", e.getMessage());
             return "redirect:/auth/registro#conductor";

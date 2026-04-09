@@ -12,8 +12,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDate;
+import com.example.MotvirsWeb.Validations.ValidPlacaVehiculo;
 
 @Document(collection = "Vehiculos")
+@ValidPlacaVehiculo
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -30,7 +32,19 @@ public class Vehiculo {
     private String marca;
     private String modelo;
     private String color;
-    private int tecnomecanicaId;
+    
+    private int anioFabricacion;
+    private int cilindraje; 
+
+    public enum TipoVehiculo { MOTO, CARRO_PARTICULAR, TAXI }
+    private TipoVehiculo tipoVehiculo;
+
+    @Indexed(unique = true, sparse = true)
+    private String soatNumero;
+    private LocalDate soatVencimiento;
+    
+    private String tecnomecanicaId;
+    private LocalDate rtmVencimiento;
 
     @DBRef
     private Conductor conductorAsignado; // Referencia al conductor propietario

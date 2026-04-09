@@ -34,6 +34,10 @@ public class Servicio {
     private double distanciaKM;
     private Coordenada ubicacionOrigen;
     private Coordenada ubicacionDestino;
+    
+    private int numeroPasajeros = 1;
+    private Vehiculo.TipoVehiculo tipoVehiculoPedido;
+    
     private LocalDateTime fechaHora;
     private LocalDateTime fechaAceptacion;
     private LocalDateTime fechaInicio;

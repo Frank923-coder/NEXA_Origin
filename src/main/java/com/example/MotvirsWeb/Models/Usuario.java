@@ -15,6 +15,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import com.example.MotvirsWeb.Validations.ValidDocumentoIdentidad;
+import com.example.MotvirsWeb.Validations.ValidTelefonoColombia;
 
 @Document(collection = "Usuarios")
 @TypeAlias("USUARIO")
@@ -30,8 +34,22 @@ public abstract class Usuario {
     @Id
     private ObjectId id;
 
+    @Indexed(unique = true, sparse = true)
+    @ValidDocumentoIdentidad
+    private String documentoIdentidad;
+
+    @ValidTelefonoColombia
+    private String telefono;
+
+    private LocalDateTime fechaAceptacionTerminos;
+    private String versionTerminos;
+
     @Indexed(unique = false)
+    @NotBlank(message = "El correo electrónico es obligatorio")
+    @Email(message = "Ingresa un correo electrónico válido")
     private String email;
+    
+    @NotBlank(message = "La contraseña es obligatoria")
     private String password;
     private LocalDateTime fechaRegistro;
     private Rol rol;
@@ -60,9 +78,6 @@ public abstract class Usuario {
             case CONDUCTOR -> Conductor.builder()
                     .rol(Rol.CONDUCTOR)
                     .estadoValidacion(EstadoValidacion.PENDIENTE)
-                    .licencia(0)
-                    .soat(0L)
-                    .tarjeta_de_propiedad(0L)
                     .build();
             case ADMIN -> Admin.builder()
                     .rol(Rol.ADMIN)
