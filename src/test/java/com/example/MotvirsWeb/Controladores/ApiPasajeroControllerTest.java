@@ -1,8 +1,13 @@
 package com.example.MotvirsWeb.Controladores;
 
 import com.example.MotvirsWeb.Models.Pasajero;
+import com.example.MotvirsWeb.Models.Rol;
 import com.example.MotvirsWeb.Repositorios.UsuarioRepository;
+import com.example.MotvirsWeb.Service.JwtService;
+import com.example.MotvirsWeb.Service.ServicioService;
 import com.example.MotvirsWeb.Service.ServicioServiceImpl;
+import com.example.MotvirsWeb.util.UsuarioContextHelper;
+import com.example.MotvirsWeb.Security.CustomUserDetailsService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,8 +16,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.HashMap;
@@ -22,19 +32,10 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import com.example.MotvirsWeb.util.UsuarioContextHelper;
-import com.example.MotvirsWeb.Service.JwtService;
-import com.example.MotvirsWeb.Security.CustomUserDetailsService;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 
 @WebMvcTest(controllers = ApiPasajeroController.class)
 @Import({ApiPasajeroControllerTest.TestSecurityConfig.class, ApiPasajeroController.class})
@@ -56,7 +57,10 @@ public class ApiPasajeroControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private ServicioServiceImpl servicioService;
+    private ServicioServiceImpl servicioServiceImpl;
+
+    @MockBean
+    private ServicioService servicioService;
 
     @MockBean
     private UsuarioRepository usuarioRepository;
@@ -101,6 +105,7 @@ public class ApiPasajeroControllerTest {
         solicitud.put("metodoPago", "EFECTIVO");
 
         when(usuarioRepository.findByEmail("pasajero@test.com")).thenReturn(Optional.of(testPasajero));
+        when(servicioServiceImpl.solicitarViaje(any(), any())).thenReturn(Map.of("mensaje", "Viaje solicitado", "servicioId", "s1"));
         when(servicioService.solicitarViaje(any(), any())).thenReturn(Map.of("mensaje", "Viaje solicitado", "servicioId", "s1"));
 
         mockMvc.perform(post("/api/pasajero/solicitar-viaje")
@@ -118,5 +123,28 @@ public class ApiPasajeroControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "PASAJERO")
+    public void obtenerPerfil_ShouldReturnPassengerData() throws Exception {
+        Pasajero mockPasajero = Pasajero.builder()
+                .nombreCompleto("Juan Perez")
+                .email("juan@test.com")
+                .rol(Rol.PASAJERO)
+                .build();
+
+        when(usuarioContextHelper.getPasajeroAutenticado()).thenReturn(mockPasajero);
+
+        mockMvc.perform(get("/api/pasajero/perfil"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombreCompleto").value("Juan Perez"))
+                .andExpect(jsonPath("$.email").value("juan@test.com"));
+    }
+
+    @Test
+    public void unauthorizedAccess_ShouldReturn401() throws Exception {
+        mockMvc.perform(get("/api/pasajero/perfil"))
+                .andExpect(status().isUnauthorized());
     }
 }
