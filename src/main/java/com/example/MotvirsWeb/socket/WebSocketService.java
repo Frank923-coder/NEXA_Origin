@@ -35,7 +35,8 @@ public class WebSocketService {
         notificacion.put("tipo", "NUEVO_REGISTRO");
         notificacion.put("email", nuevoUsuario.getEmail());
         notificacion.put("rol", nuevoUsuario.getRol().toString());
-        notificacion.put("fecha", nuevoUsuario.getFechaRegistro() != null ? nuevoUsuario.getFechaRegistro().toString() : "Ahora");
+        notificacion.put("fecha",
+                nuevoUsuario.getFechaRegistro() != null ? nuevoUsuario.getFechaRegistro().toString() : "Ahora");
 
         // Enviamos al topic específico
         messagingTemplate.convertAndSend("/topic/admin/registros", notificacion);
