@@ -4,6 +4,6 @@
 - [x] 3. Modelos
 - [x] 4. Repositorios y servicio de auth
 - [x] 5. Endpoints
-- [ ] 6. Tests
-- [ ] 7. Calidad
-- [ ] 8. README
+- [x] 6. Tests
+- [x] 7. Calidad
+- [x] 8. README
