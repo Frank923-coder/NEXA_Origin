@@ -3,3 +3,7 @@
 - No se migran datos de NEXA (MongoDB) a MySQL: el esquema `users` es nuevo; no se copian ni exponen credenciales existentes del proyecto.
 - `bcrypt<4.1` fijado por compatibilidad con passlib 1.7.4.
 - `email-validator` añadido para `EmailStr`.
+- Clase ORM de sesión se llama `UserSession` (tabla `sessions`) para no chocar con `sqlalchemy.orm.Session`.
+- Fechas guardadas en UTC naive (DATETIME de MySQL no guarda zona).
+- `create_all` se ejecuta en el lifespan de la app; `scripts/schema.sql` es el equivalente manual.
+- Token: se guarda HMAC-SHA256(SECRET_KEY, token) — es SHA-256 con pepper, así una fuga de la BD no permite validar tokens sin el secreto.
