@@ -1,7 +1,7 @@
 # PROGRESS
 - [x] 1. Entorno
 - [x] 2. Configuración y conexión
-- [ ] 3. Modelos
+- [x] 3. Modelos
 - [ ] 4. Repositorios y servicio de auth
 - [ ] 5. Endpoints
 - [ ] 6. Tests

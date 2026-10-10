@@ -7,3 +7,6 @@
 - Fechas guardadas en UTC naive (DATETIME de MySQL no guarda zona).
 - `create_all` se ejecuta en el lifespan de la app; `scripts/schema.sql` es el equivalente manual.
 - Token: se guarda HMAC-SHA256(SECRET_KEY, token) — es SHA-256 con pepper, así una fuga de la BD no permite validar tokens sin el secreto.
+- Password limitado a 72 caracteres (límite de bcrypt). Email se normaliza a minúsculas.
+- Login con email inexistente verifica un hash dummy para no filtrar usuarios por tiempo; mismo mensaje 401 para ambos casos.
+- Sesión expirada se borra al detectarse y devuelve 401.
